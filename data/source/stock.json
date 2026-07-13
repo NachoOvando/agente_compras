@@ -1,0 +1,26 @@
+{
+  "fecha_actualizacion": "2026-07-12",
+  "items": [
+    {
+      "codigo": "INS-001",
+      "insumo": "Cuero vacuno",
+      "unidad": "m2",
+      "stock_actual": 150,
+      "stock_minimo": 400
+    },
+    {
+      "codigo": "INS-002",
+      "insumo": "Suela de poliuretano (PU)",
+      "unidad": "par",
+      "stock_actual": 3200,
+      "stock_minimo": 1500
+    },
+    {
+      "codigo": "INS-003",
+      "insumo": "Puntera de acero",
+      "unidad": "par",
+      "stock_actual": 6000,
+      "stock_minimo": 4000
+    }
+  ]
+}

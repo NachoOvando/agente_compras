@@ -1,0 +1,8 @@
+# Dependencias de RUNTIME — esto es lo único que Vercel instala para la
+# serverless function (api/index.py). Todo lo de scripts offline y tests
+# va en requirements-dev.txt para no inflar el bundle ni el cold start.
+fastapi>=0.115
+uvicorn>=0.32
+openai>=1.55
+numpy>=2.1
+python-dotenv>=1.0

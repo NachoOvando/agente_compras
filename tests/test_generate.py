@@ -1,0 +1,126 @@
+"""Tests de rag_answer: la orquestación retrieve → augment → generate.
+
+Sin llamadas reales a OpenAI: se inyecta un cliente fake por el parámetro
+`client=` y se stubean el índice y los embeddings de la pregunta.
+"""
+
+import json
+
+import numpy as np
+import pytest
+
+from engine import config, context, generate, retrieval
+
+
+class FakeClient:
+    """Cliente OpenAI falso: registra las llamadas y devuelve contenido fijo."""
+
+    def __init__(self, answer="respuesta de prueba"):
+        self.chat_calls = []
+        outer = self
+
+        class _Completions:
+            def create(self, **kwargs):
+                outer.chat_calls.append(kwargs)
+
+                class _Msg:
+                    content = answer
+
+                class _Choice:
+                    message = _Msg()
+
+                class _Resp:
+                    choices = [_Choice()]
+
+                return _Resp()
+
+        class _Chat:
+            completions = _Completions()
+
+        self.chat = _Chat()
+
+
+@pytest.fixture(autouse=True)
+def entorno_de_prueba(tmp_path, monkeypatch):
+    """Índice fake, BOM y stock temporales; embeddings de pregunta stubeados."""
+    # BOM y stock en archivos temporales (mismo patrón que test_context.py)
+    bom_path = tmp_path / "bom.json"
+    stock_path = tmp_path / "stock.json"
+    bom_path.write_text(json.dumps([
+        {"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
+         "consumo_por_unidad": 0.19, "critico": True},
+    ]), encoding="utf-8")
+    stock_path.write_text(json.dumps({
+        "fecha_actualizacion": "2026-07-12",
+        "items": [{"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
+                   "stock_actual": 150, "stock_minimo": 400}],
+    }), encoding="utf-8")
+    monkeypatch.setattr(config, "BOM_JSON_PATH", bom_path)
+    monkeypatch.setattr(config, "STOCK_JSON_PATH", stock_path)
+    context.load_bom.cache_clear()
+    context._load_stock_file.cache_clear()
+
+    # Índice fake: 3 chunks con embeddings ortogonales
+    chunks = ("ficha del cuero vacuno", "ficha de la suela PU", "ficha de la puntera")
+    embeddings = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    monkeypatch.setattr(retrieval, "load_index", lambda: (chunks, embeddings))
+
+    # La pregunta siempre se embebe como un vector alineado al primer chunk.
+    # Se patchea el nombre importado en engine.generate (no engine.indexing).
+    monkeypatch.setattr(generate, "get_embeddings",
+                        lambda client, texts: np.array([[0.9, 0.1, 0.0]]))
+    yield
+    context.load_bom.cache_clear()
+    context._load_stock_file.cache_clear()
+
+
+def test_rag_answer_devuelve_answer_y_sources():
+    client = FakeClient(answer="comprar cuero primero")
+    resultado = generate.rag_answer("¿qué compro primero?", client=client)
+
+    assert resultado["answer"] == "comprar cuero primero"
+    assert len(resultado["sources"]) == config.TOP_K
+    # sources expone index+score pero NO el texto del chunk
+    assert set(resultado["sources"][0].keys()) == {"index", "score"}
+    assert resultado["sources"][0]["index"] == 0  # el más similar
+
+
+def test_rag_answer_pregunta_vacia_lanza_valueerror():
+    client = FakeClient()
+    with pytest.raises(ValueError):
+        generate.rag_answer("   ", client=client)
+    assert client.chat_calls == []  # nunca llegó a llamar al LLM
+
+
+def test_rag_answer_respeta_k():
+    client = FakeClient()
+    resultado = generate.rag_answer("pregunta", k=1, client=client)
+    assert len(resultado["sources"]) == 1
+
+
+def test_rag_answer_construye_prompt_con_contexto_completo():
+    client = FakeClient()
+    generate.rag_answer("¿alcanza el stock?", client=client)
+
+    [llamada] = client.chat_calls
+    user_prompt = llamada["messages"][1]["content"]
+    assert "ficha del cuero vacuno" in user_prompt  # chunk recuperado
+    assert "INS-001 | Cuero vacuno" in user_prompt  # BOM inyectada
+    assert "stock actual 150 m2" in user_prompt     # stock inyectado
+    assert "¿alcanza el stock?" in user_prompt      # la pregunta
+    assert llamada["model"] == config.CHAT_MODEL
+    assert llamada["temperature"] == config.TEMPERATURE
+
+
+def test_rag_answer_aplica_stock_overrides():
+    client = FakeClient()
+    generate.rag_answer("pregunta", stock_overrides={"INS-001": 999}, client=client)
+    user_prompt = client.chat_calls[0]["messages"][1]["content"]
+    assert "stock actual 999 m2" in user_prompt
+
+
+def test_rag_answer_bom_faltante_propaga_filenotfound(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "BOM_JSON_PATH", tmp_path / "no_existe.json")
+    context.load_bom.cache_clear()
+    with pytest.raises(FileNotFoundError, match="build_index"):
+        generate.rag_answer("pregunta", client=FakeClient())

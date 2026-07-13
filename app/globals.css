@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Sistema de diseño "Enterprise SaaS" — navy/slate + acento azul.
+   Generado con el skill ui-ux-pro-max (--design-system) para un
+   producto B2B de compras/procurement. */
+:root {
+  --color-primary: #0f172a;
+  --color-on-primary: #ffffff;
+  --color-secondary: #334155;
+  --color-accent: #0369a1;
+  --color-background: #f8fafc;
+  --color-foreground: #020617;
+  --color-card: #ffffff;
+  --color-muted: #e8ecf1;
+  --color-muted-foreground: #64748b;
+  --color-border: #e2e8f0;
+  --color-destructive: #dc2626;
+  --color-success: #16a34a;
+  --color-ring: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #e2e8f0;
+    --color-on-primary: #0f172a;
+    --color-secondary: #cbd5e1;
+    --color-accent: #38bdf8;
+    --color-background: #0b1220;
+    --color-foreground: #f1f5f9;
+    --color-card: #111a2c;
+    --color-muted: #1e293b;
+    --color-muted-foreground: #94a3b8;
+    --color-border: #1e293b;
+    --color-destructive: #f87171;
+    --color-success: #4ade80;
+    --color-ring: #38bdf8;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  /* Foco visible consistente en todos los elementos interactivos (WCAG). */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Respeta la preferencia de reducir movimiento del sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

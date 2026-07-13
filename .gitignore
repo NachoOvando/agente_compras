@@ -1,0 +1,24 @@
+# dependencias
+node_modules/
+.venv/
+
+# builds
+.next/
+out/
+.vercel/
+tsconfig.tsbuildinfo
+
+# entorno — nunca commitear credenciales
+.env
+.env.local
+.env.production
+*.pem
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# sistema
+.DS_Store
+desktop.ini

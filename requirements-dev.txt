@@ -1,0 +1,9 @@
+# Dependencias de desarrollo local: incluye el runtime (-r) más lo que usan
+# los scripts offline (build_index, seed) y los tests. Vercel NUNCA lee este
+# archivo. Instalar con: pip install -r requirements-dev.txt
+-r requirements.txt
+pypdf>=5.1
+pandas>=2.2
+openpyxl>=3.1
+pytest>=8.3
+httpx>=0.27
