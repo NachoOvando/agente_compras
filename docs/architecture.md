@@ -23,15 +23,15 @@ tiene — nunca inventa. Prueba de concepto de tesis, con datos de ejemplo ficti
 
 ```
 Browser
-  └── Componentes React (components/ — presentación)
-        └── lib/api-client.ts (fetch tipado, contrato {data}/{error,code})
+  └── Componentes React (src/components/ — presentación)
+        └── src/lib/api-client.ts (fetch tipado, contrato {data}/{error,code})
               └── api/index.py (FastAPI — solo routing y validación)
                     └── engine/ (motor RAG — lógica de dominio, testeable sin servidor)
                           └── data/ (cerco de información: fuentes + índice precomputado)
 ```
 
 Reglas respetadas: los componentes no llaman a la API directamente (pasan por
-`lib/`), los routers no tienen lógica de negocio (delegan a `engine/`), y el
+`src/lib/`), los routers no tienen lógica de negocio (delegan a `engine/`), y el
 motor no importa nada de FastAPI ni de React.
 
 ## Flujo de una consulta

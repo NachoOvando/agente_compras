@@ -1,4 +1,4 @@
-import rawConfig from '@/shared/app-config.json';
+import rawConfig from '@shared/app-config.json';
 
 export interface AppConfig {
   producto: string;
