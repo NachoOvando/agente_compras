@@ -24,7 +24,7 @@ Detalle completo en [docs/deployment.md](docs/deployment.md).
 
 ## Estructura
 
-- `app/`, `components/`, `lib/` — frontend Next.js (App Router).
+- `src/` — frontend Next.js (App Router): `src/app/`, `src/components/`, `src/lib/`.
 - `api/index.py` — FastAPI (serverless en Vercel), solo routing.
 - `engine/` — motor RAG: config, chunking, embeddings, retrieval, contexto, prompts, generación. Incluye CLI (`python -m engine.cli demo`).
 - `shared/app-config.json` — producto y preguntas demo (fuente única para Python y frontend).

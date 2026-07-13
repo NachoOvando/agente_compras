@@ -29,7 +29,7 @@ tocar según lo que quieras cambiar:
 | El **modelo de embeddings** | [`engine/config.py`](../engine/config.py) | `EMBEDDING_MODEL` — **si lo cambiás hay que regenerar el índice** (`python scripts/build_index.py`), los vectores viejos no son compatibles |
 | **Temperatura / longitud de respuesta** | [`engine/config.py`](../engine/config.py) | `TEMPERATURE` (0.1 = respuestas fieles al dato), `MAX_TOKENS` |
 | **Cuántos chunks se recuperan por pregunta** | [`engine/config.py`](../engine/config.py) | `TOP_K` (default 3) |
-| El **nombre del producto** o las **preguntas de ejemplo** | [`shared/app-config.json`](../shared/app-config.json) | Fuente única compartida por Python (`engine/config.py` la carga como `PRODUCTO`/`PREGUNTAS_DEMO`) y frontend (`lib/app-config.ts`). **No editar en config.py ni en los componentes React** |
+| El **nombre del producto** o las **preguntas de ejemplo** | [`shared/app-config.json`](../shared/app-config.json) | Fuente única compartida por Python (`engine/config.py` la carga como `PRODUCTO`/`PREGUNTAS_DEMO`) y frontend (`src/lib/app-config.ts`). **No editar en config.py ni en los componentes React** |
 | **Tamaño de chunk / overlap** del PDF | [`engine/config.py`](../engine/config.py) | `CHUNK_SIZE`, `CHUNK_OVERLAP` — cambiarlos también requiere re-indexar |
 | Cómo se arma el contexto (qué se le manda al LLM) | [`engine/context.py`](../engine/context.py) | `build_context()`, `format_bom()`, `format_stock()` |
 | Cómo se calcula similitud / se eligen los top-k chunks | [`engine/retrieval.py`](../engine/retrieval.py) | `cosine_similarities()`, `top_k_chunks()` |
@@ -54,9 +54,9 @@ por `build_index.py` — no se edita a mano.
 
 ## Frontend (si querés cambiar textos, colores o preguntas de ejemplo)
 
-- Preguntas de ejemplo y nombre del producto: `shared/app-config.json` (fuente única — la leen `engine/config.py` del lado Python y `lib/app-config.ts` del lado frontend; `engine/cli.py` importa `PREGUNTAS_DEMO` desde `engine.config`).
-- Paleta de colores / tipografía: variables CSS en `app/globals.css` (`--color-*`) y `tailwind.config.ts`.
-- Textos de la página principal: `app/page.tsx`.
+- Preguntas de ejemplo y nombre del producto: `shared/app-config.json` (fuente única — la leen `engine/config.py` del lado Python y `src/lib/app-config.ts` del lado frontend; `engine/cli.py` importa `PREGUNTAS_DEMO` desde `engine.config`).
+- Paleta de colores / tipografía: variables CSS en `src/app/globals.css` (`--color-*`) y `tailwind.config.ts`.
+- Textos de la página principal: `src/app/page.tsx`.
 
 ## Probar un cambio rápido sin levantar la web
 
