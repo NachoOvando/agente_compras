@@ -58,6 +58,9 @@ npm run typecheck                  # tsc --noEmit
    `api/index.py` se deploya automáticamente como serverless function Python.
    Vercel instala **solo el `requirements.txt` de la raíz** (runtime lean);
    `requirements-dev.txt` es exclusivamente local y Vercel nunca lo lee.
+   `vercel.json` sube el timeout de esa función a 30s (default: 10s en plan
+   Hobby), porque `/api/py/ask` encadena dos llamadas a OpenAI (embedding +
+   chat completion) más el cold start de cargar `embeddings.npy`.
 3. Configurar la Environment Variable `OPENAI_API_KEY` en el proyecto
    (Settings → Environment Variables). Nunca commitearla.
 4. Deploy. Verificar `https://<proyecto>.vercel.app/api/py/health`.
