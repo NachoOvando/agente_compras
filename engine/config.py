@@ -20,12 +20,19 @@ DATA_INDEX_DIR = BASE_DIR / "data" / "index"
 PDF_FICHAS_PATH = DATA_SOURCE_DIR / "datos_maincal_EJEMPLO.pdf"
 BOM_XLSX_PATH = DATA_SOURCE_DIR / "bom_cronos_n04.xlsx"
 STOCK_JSON_PATH = DATA_SOURCE_DIR / "stock.json"
+POLITICAS_XLSX_PATH = DATA_SOURCE_DIR / "politicas_inventario.xlsx"
 
 CHUNKS_JSON_PATH = DATA_INDEX_DIR / "chunks.json"
 EMBEDDINGS_NPY_PATH = DATA_INDEX_DIR / "embeddings.npy"
 BOM_JSON_PATH = DATA_INDEX_DIR / "bom.json"
+POLITICAS_JSON_PATH = DATA_INDEX_DIR / "politicas.json"
 
 SHARED_CONFIG_PATH = BASE_DIR / "shared" / "app-config.json"
+
+# Talles de calzado soportados (algunos insumos consumen distinto según el
+# talle, ej. la suela de poliuretano). Rango único: build_index.py y
+# context.py lo referencian, nunca hardcodean 34/50 por separado.
+TALLES: list[str] = [str(t) for t in range(34, 51)]
 
 # --- Modelos OpenAI ---
 EMBEDDING_MODEL = "text-embedding-3-small"

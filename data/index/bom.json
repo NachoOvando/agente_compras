@@ -1,72 +1,116 @@
 [
   {
     "codigo": "INS-001",
-    "insumo": "Cuero vacuno",
-    "unidad": "m2",
-    "consumo_por_unidad": 0.19,
-    "critico": true
+    "insumo": "Suela de poliuretano (PU)",
+    "unidad": "g",
+    "consumo_por_unidad": null,
+    "critico": true,
+    "consumo_por_talle": {
+      "34": 369.167,
+      "35": 369.167,
+      "36": 379.167,
+      "37": 379.167,
+      "38": 417.167,
+      "39": 433.167,
+      "40": 449.167,
+      "41": 479.167,
+      "42": 483.167,
+      "43": 533.167,
+      "44": 509.167,
+      "45": 563.167,
+      "46": 563.167,
+      "47": 587.167,
+      "48": 587.167,
+      "49": 587.167,
+      "50": 587.167
+    }
   },
   {
     "codigo": "INS-002",
-    "insumo": "Suela de poliuretano (PU)",
-    "unidad": "par",
-    "consumo_por_unidad": 1.0,
-    "critico": true
-  },
-  {
-    "codigo": "INS-003",
     "insumo": "Puntera de acero",
     "unidad": "par",
     "consumo_por_unidad": 1.0,
-    "critico": true
+    "critico": true,
+    "consumo_por_talle": null
+  },
+  {
+    "codigo": "INS-003",
+    "insumo": "Caja de empaque",
+    "unidad": "unidad",
+    "consumo_por_unidad": 1.0,
+    "critico": true,
+    "consumo_por_talle": null
   },
   {
     "codigo": "INS-004",
-    "insumo": "Plantilla anatómica",
+    "insumo": "Capellada",
     "unidad": "par",
     "consumo_por_unidad": 1.0,
-    "critico": false
+    "critico": false,
+    "consumo_por_talle": null
   },
   {
     "codigo": "INS-005",
-    "insumo": "Cordones 120 cm",
+    "insumo": "Plantilla armado",
     "unidad": "par",
     "consumo_por_unidad": 1.0,
-    "critico": false
+    "critico": false,
+    "consumo_por_talle": null
   },
   {
     "codigo": "INS-006",
-    "insumo": "Hilo de coser poliéster",
-    "unidad": "m",
-    "consumo_por_unidad": 8.0,
-    "critico": false
+    "insumo": "Plantilla vista",
+    "unidad": "par",
+    "consumo_por_unidad": 1.0,
+    "critico": false,
+    "consumo_por_talle": null
   },
   {
     "codigo": "INS-007",
-    "insumo": "Ojalillos metálicos",
-    "unidad": "unidad",
-    "consumo_por_unidad": 12.0,
-    "critico": false
+    "insumo": "Hilo de coser poliéster",
+    "unidad": "m",
+    "consumo_por_unidad": 11.0,
+    "critico": false,
+    "consumo_por_talle": null
   },
   {
     "codigo": "INS-008",
-    "insumo": "Adhesivo de poliuretano",
-    "unidad": "kg",
-    "consumo_por_unidad": 0.03,
-    "critico": false
+    "insumo": "Cordones trenzados 0.90m",
+    "unidad": "par",
+    "consumo_por_unidad": 1.0,
+    "critico": false,
+    "consumo_por_talle": null
   },
   {
     "codigo": "INS-009",
-    "insumo": "Forro interior textil",
-    "unidad": "m2",
-    "consumo_por_unidad": 0.12,
-    "critico": false
+    "insumo": "Tinta para PU (gris)",
+    "unidad": "g",
+    "consumo_por_unidad": 12.2,
+    "critico": false,
+    "consumo_por_talle": null
   },
   {
     "codigo": "INS-010",
-    "insumo": "Etiqueta y caja individual",
+    "insumo": "Tinta para PU (negro)",
+    "unidad": "g",
+    "consumo_por_unidad": 2.8,
+    "critico": false,
+    "consumo_por_talle": null
+  },
+  {
+    "codigo": "INS-011",
+    "insumo": "Conjunto armado",
     "unidad": "unidad",
     "consumo_por_unidad": 1.0,
-    "critico": false
+    "critico": false,
+    "consumo_por_talle": null
+  },
+  {
+    "codigo": "INS-012",
+    "insumo": "Flyer condiciones de uso",
+    "unidad": "unidad",
+    "consumo_por_unidad": 1.0,
+    "critico": false,
+    "consumo_por_talle": null
   }
 ]

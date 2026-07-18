@@ -26,10 +26,11 @@ def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
         np.asarray(question_embedding), chunks, chunk_embeddings, k=k
     )
 
-    # AUGMENT: fichas recuperadas + BOM + stock actual (datos exactos)
+    # AUGMENT: fichas recuperadas + BOM + stock actual + políticas (datos exactos)
     bom = context.load_bom()
     stock = context.load_stock(stock_overrides)
-    full_context = context.build_context(retrieved, bom, stock)
+    politicas = context.load_politicas()
+    full_context = context.build_context(retrieved, bom, stock, politicas)
 
     # GENERATE
     response = client.chat.completions.create(

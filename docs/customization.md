@@ -29,9 +29,10 @@ tocar según lo que quieras cambiar:
 | El **modelo de embeddings** | [`engine/config.py`](../engine/config.py) | `EMBEDDING_MODEL` — **si lo cambiás hay que regenerar el índice** (`python scripts/build_index.py`), los vectores viejos no son compatibles |
 | **Temperatura / longitud de respuesta** | [`engine/config.py`](../engine/config.py) | `TEMPERATURE` (0.1 = respuestas fieles al dato), `MAX_TOKENS` |
 | **Cuántos chunks se recuperan por pregunta** | [`engine/config.py`](../engine/config.py) | `TOP_K` (default 3) |
+| **Rango de talles soportado** | [`engine/config.py`](../engine/config.py) | `TALLES` (default 34–50) |
 | El **nombre del producto** o las **preguntas de ejemplo** | [`shared/app-config.json`](../shared/app-config.json) | Fuente única compartida por Python (`engine/config.py` la carga como `PRODUCTO`/`PREGUNTAS_DEMO`) y frontend (`src/lib/app-config.ts`). **No editar en config.py ni en los componentes React** |
 | **Tamaño de chunk / overlap** del PDF | [`engine/config.py`](../engine/config.py) | `CHUNK_SIZE`, `CHUNK_OVERLAP` — cambiarlos también requiere re-indexar |
-| Cómo se arma el contexto (qué se le manda al LLM) | [`engine/context.py`](../engine/context.py) | `build_context()`, `format_bom()`, `format_stock()` |
+| Cómo se arma el contexto (qué se le manda al LLM) | [`engine/context.py`](../engine/context.py) | `build_context()`, `format_bom()`, `format_stock()`, `format_politicas()` |
 | Cómo se calcula similitud / se eligen los top-k chunks | [`engine/retrieval.py`](../engine/retrieval.py) | `cosine_similarities()`, `top_k_chunks()` |
 | Lectura de PDF y chunking | [`engine/indexing.py`](../engine/indexing.py) | `read_pdf_text()`, `split_text_chunks()` |
 | La orquestación completa (retrieve → augment → generate) | [`engine/generate.py`](../engine/generate.py) | `rag_answer()` |
@@ -46,11 +47,17 @@ modelo de embeddings, o `CHUNK_SIZE`/`CHUNK_OVERLAP`.
 | Fuente | Archivo | Cómo se actualiza |
 |---|---|---|
 | Fichas de proveedores | `data/source/datos_maincal_EJEMPLO.pdf` | Reemplazar el PDF (mismo esquema: 1 insumo crítico por sección) → correr `python scripts/build_index.py` |
-| BOM del producto | `data/source/bom_cronos_n04.xlsx` | Editar el Excel (columnas: `codigo, insumo, unidad, consumo_por_unidad, critico`) → correr `python scripts/build_index.py` |
-| Stock actual | `data/source/stock.json` | Editar directo el JSON, o regenerar con `python scripts/seed_example_data.py` (solo datos de ejemplo) |
+| BOM del producto | `data/source/bom_cronos_n04.xlsx` | Editar el Excel. Columnas obligatorias: `codigo, insumo, unidad, consumo_por_unidad, critico`. Columnas **opcionales** `T34...T50`: solo para insumos cuyo consumo varía por talle (calzado en 17 talles) — hay que completar las 17 y dejar `consumo_por_unidad` en blanco para esa fila; si no varía, dejar las 17 columnas vacías → correr `python scripts/build_index.py` |
+| Políticas de inventario | `data/source/politicas_inventario.xlsx` | Editar el Excel (columnas: `Familia, UM, Política, Lead_Time_dias, Demanda_media_mensual, Desvio_mensual, Stock_Seguridad, ROP_o_Nivel_Objetivo, Stock_Maximo, Cobertura_SS_dias`). El nombre de `Familia` tiene que estar en `FAMILIA_A_INSUMO` (`scripts/build_index.py`) — agregarlo ahí si es un insumo crítico nuevo → correr `python scripts/build_index.py` |
+| Stock actual | `data/source/stock.json` | Editar directo el JSON (`stock_actual` es el input manual/diario; `stock_minimo` es el ROP real de `politicas_inventario.xlsx`), o regenerar con `python scripts/seed_example_data.py` (solo datos de ejemplo; no pisa archivos existentes salvo `--force`) |
 
-`data/index/` (chunks, embeddings, BOM normalizada) se genera automáticamente
-por `build_index.py` — no se edita a mano.
+`data/index/` (chunks, embeddings, BOM y políticas normalizadas) se genera
+automáticamente por `build_index.py` — no se edita a mano.
+
+**Insumos críticos**: son los que tienen ficha (PDF), stock y política de
+inventario — hoy Suela de poliuretano (PU), Puntera de acero y Caja de
+empaque. Si ese set cambia, hay que actualizar los 4 archivos de
+`data/source/` de forma consistente (mismo nombre de `insumo` en los cuatro).
 
 ## Frontend (si querés cambiar textos, colores o preguntas de ejemplo)
 

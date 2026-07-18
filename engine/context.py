@@ -27,6 +27,19 @@ def load_bom() -> list[dict]:
 
 
 @lru_cache(maxsize=1)
+def load_politicas() -> list[dict]:
+    """Políticas de inventario de los insumos críticos (generadas por
+    scripts/build_index.py a partir del análisis de lead time/demanda/ROP)."""
+    if not config.POLITICAS_JSON_PATH.exists():
+        raise FileNotFoundError(
+            "No se encontró data/index/politicas.json. "
+            "Generalo corriendo: python scripts/build_index.py"
+        )
+    with open(config.POLITICAS_JSON_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+@lru_cache(maxsize=1)
 def _load_stock_file() -> dict:
     if not config.STOCK_JSON_PATH.exists():
         raise FileNotFoundError(
@@ -52,15 +65,63 @@ def load_stock(overrides: dict[str, float] | None = None) -> dict:
 
 
 def format_bom(bom: list[dict]) -> str:
-    """BOM como tabla de texto plano para el contexto del LLM."""
+    """BOM como tabla de texto plano para el contexto del LLM.
+
+    La mayoría de los insumos consumen una cantidad fija por par. Algunos
+    (ej. la suela de poliuretano) consumen distinto según el talle del
+    calzado: para esos, la tabla principal muestra un placeholder y el valor
+    real va en un bloque "DETALLE POR TALLE" aparte (solo aparece si hace
+    falta, para no inflar el contexto de los insumos fijos).
+    """
     lineas = [
         f"BOM del producto {config.PRODUCTO} (consumo por par producido):",
         "codigo | insumo | unidad | consumo_por_par | critico",
     ]
+    variables = []
     for fila in bom:
+        consumo_por_talle = fila.get("consumo_por_talle")
+        if consumo_por_talle:
+            variables.append(fila)
+            consumo_txt = "variable por talle (ver detalle abajo)"
+        else:
+            consumo_txt = fila["consumo_por_unidad"]
         lineas.append(
             f"{fila['codigo']} | {fila['insumo']} | {fila['unidad']} | "
-            f"{fila['consumo_por_unidad']} | {'SI' if fila['critico'] else 'NO'}"
+            f"{consumo_txt} | {'SI' if fila['critico'] else 'NO'}"
+        )
+
+    if variables:
+        lineas.append("")
+        lineas.append(
+            "DETALLE POR TALLE (consumo por par de los insumos que varían "
+            f"según el talle, T.{config.TALLES[0]} a T.{config.TALLES[-1]}):"
+        )
+        for fila in variables:
+            detalle = " ".join(
+                f"T{t}={v}" for t, v in fila["consumo_por_talle"].items()
+            )
+            lineas.append(
+                f"{fila['codigo']} | {fila['insumo']} ({fila['unidad']}/par): {detalle}"
+            )
+
+    return "\n".join(lineas)
+
+
+def format_politicas(politicas: list[dict]) -> str:
+    """Políticas de inventario de los insumos críticos, como texto plano."""
+    lineas = [
+        "POLÍTICAS DE INVENTARIO de los insumos críticos (calculadas con lead "
+        "time, demanda y variabilidad de la demanda):",
+        "insumo | política | lead_time_dias | demanda_media_mensual | "
+        "desvio_mensual | stock_seguridad | ROP/nivel_objetivo | stock_maximo "
+        "| cobertura_stock_seguridad_dias",
+    ]
+    for fila in politicas:
+        lineas.append(
+            f"{fila['insumo']} | {fila['politica']} | {fila['lead_time_dias']} | "
+            f"{fila['demanda_media_mensual']} | {fila['desvio_mensual']} | "
+            f"{fila['stock_seguridad']} | {fila['rop']} | {fila['stock_maximo']} | "
+            f"{fila['cobertura_ss_dias']}"
         )
     return "\n".join(lineas)
 
@@ -79,8 +140,10 @@ def format_stock(stock: dict) -> str:
     return "\n".join(lineas)
 
 
-def build_context(retrieved: list[dict], bom: list[dict], stock: dict) -> str:
-    """Concatena fichas recuperadas + BOM + stock en un único contexto."""
+def build_context(
+    retrieved: list[dict], bom: list[dict], stock: dict, politicas: list[dict]
+) -> str:
+    """Concatena fichas recuperadas + BOM + stock + políticas en un único contexto."""
     fichas = "\n\n".join(res["chunk"] for res in retrieved)
     return (
         "=== FICHAS DE PROVEEDORES (fragmentos recuperados) ===\n"
@@ -88,5 +151,7 @@ def build_context(retrieved: list[dict], bom: list[dict], stock: dict) -> str:
         "=== BOM DEL PRODUCTO ===\n"
         f"{format_bom(bom)}\n\n"
         "=== STOCK ACTUAL ===\n"
-        f"{format_stock(stock)}"
+        f"{format_stock(stock)}\n\n"
+        "=== POLÍTICAS DE INVENTARIO ===\n"
+        f"{format_politicas(politicas)}"
     )

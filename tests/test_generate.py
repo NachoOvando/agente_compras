@@ -43,22 +43,34 @@ class FakeClient:
 @pytest.fixture(autouse=True)
 def entorno_de_prueba(tmp_path, monkeypatch):
     """Índice fake, BOM y stock temporales; embeddings de pregunta stubeados."""
-    # BOM y stock en archivos temporales (mismo patrón que test_context.py)
+    # BOM, stock y políticas en archivos temporales (mismo patrón que test_context.py)
     bom_path = tmp_path / "bom.json"
     stock_path = tmp_path / "stock.json"
+    politicas_path = tmp_path / "politicas.json"
     bom_path.write_text(json.dumps([
         {"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
          "consumo_por_unidad": 0.19, "critico": True},
+        {"codigo": "INS-002", "insumo": "Suela de poliuretano (PU)", "unidad": "g",
+         "consumo_por_unidad": None, "critico": True,
+         "consumo_por_talle": {"34": 369.167, "40": 478.167, "50": 587.167}},
     ]), encoding="utf-8")
     stock_path.write_text(json.dumps({
         "fecha_actualizacion": "2026-07-12",
         "items": [{"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
                    "stock_actual": 150, "stock_minimo": 400}],
     }), encoding="utf-8")
+    politicas_path.write_text(json.dumps([
+        {"insumo": "Cuero vacuno", "politica": "Revisión periódica (R,S)",
+         "lead_time_dias": 15, "demanda_media_mensual": 850, "desvio_mensual": 40,
+         "stock_seguridad": 100, "rop": 400, "stock_maximo": 900,
+         "cobertura_ss_dias": 3.5},
+    ]), encoding="utf-8")
     monkeypatch.setattr(config, "BOM_JSON_PATH", bom_path)
     monkeypatch.setattr(config, "STOCK_JSON_PATH", stock_path)
+    monkeypatch.setattr(config, "POLITICAS_JSON_PATH", politicas_path)
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
+    context.load_politicas.cache_clear()
 
     # Índice fake: 3 chunks con embeddings ortogonales
     chunks = ("ficha del cuero vacuno", "ficha de la suela PU", "ficha de la puntera")
@@ -72,6 +84,7 @@ def entorno_de_prueba(tmp_path, monkeypatch):
     yield
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
+    context.load_politicas.cache_clear()
 
 
 def test_rag_answer_devuelve_answer_y_sources():
@@ -124,3 +137,22 @@ def test_rag_answer_bom_faltante_propaga_filenotfound(monkeypatch, tmp_path):
     context.load_bom.cache_clear()
     with pytest.raises(FileNotFoundError, match="build_index"):
         generate.rag_answer("pregunta", client=FakeClient())
+
+
+def test_rag_answer_incluye_detalle_por_talle_en_el_contexto():
+    """Confirma que el detalle por talle llega al contexto que recibe el LLM.
+    No prueba que el modelo elija la columna correcta (eso se verifica a
+    mano con un cliente real, ver docs/customization.md)."""
+    client = FakeClient()
+    generate.rag_answer("¿cuánto sistema PU para talle 40?", client=client)
+    user_prompt = client.chat_calls[0]["messages"][1]["content"]
+    assert "DETALLE POR TALLE" in user_prompt
+    assert "T40=478.167" in user_prompt
+
+
+def test_rag_answer_incluye_politicas_de_inventario_en_el_contexto():
+    client = FakeClient()
+    generate.rag_answer("¿por qué es prioritario el cuero?", client=client)
+    user_prompt = client.chat_calls[0]["messages"][1]["content"]
+    assert "POLÍTICAS DE INVENTARIO" in user_prompt
+    assert "Revisión periódica (R,S)" in user_prompt
