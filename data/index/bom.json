@@ -1,0 +1,72 @@
+[
+  {
+    "codigo": "INS-001",
+    "insumo": "Cuero vacuno",
+    "unidad": "m2",
+    "consumo_por_unidad": 0.19,
+    "critico": true
+  },
+  {
+    "codigo": "INS-002",
+    "insumo": "Suela de poliuretano (PU)",
+    "unidad": "par",
+    "consumo_por_unidad": 1.0,
+    "critico": true
+  },
+  {
+    "codigo": "INS-003",
+    "insumo": "Puntera de acero",
+    "unidad": "par",
+    "consumo_por_unidad": 1.0,
+    "critico": true
+  },
+  {
+    "codigo": "INS-004",
+    "insumo": "Plantilla anatómica",
+    "unidad": "par",
+    "consumo_por_unidad": 1.0,
+    "critico": false
+  },
+  {
+    "codigo": "INS-005",
+    "insumo": "Cordones 120 cm",
+    "unidad": "par",
+    "consumo_por_unidad": 1.0,
+    "critico": false
+  },
+  {
+    "codigo": "INS-006",
+    "insumo": "Hilo de coser poliéster",
+    "unidad": "m",
+    "consumo_por_unidad": 8.0,
+    "critico": false
+  },
+  {
+    "codigo": "INS-007",
+    "insumo": "Ojalillos metálicos",
+    "unidad": "unidad",
+    "consumo_por_unidad": 12.0,
+    "critico": false
+  },
+  {
+    "codigo": "INS-008",
+    "insumo": "Adhesivo de poliuretano",
+    "unidad": "kg",
+    "consumo_por_unidad": 0.03,
+    "critico": false
+  },
+  {
+    "codigo": "INS-009",
+    "insumo": "Forro interior textil",
+    "unidad": "m2",
+    "consumo_por_unidad": 0.12,
+    "critico": false
+  },
+  {
+    "codigo": "INS-010",
+    "insumo": "Etiqueta y caja individual",
+    "unidad": "unidad",
+    "consumo_por_unidad": 1.0,
+    "critico": false
+  }
+]
