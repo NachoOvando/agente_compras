@@ -29,14 +29,14 @@ Stock actual de los insumos críticos (desde `data/source/stock.json`).
   "data": {
     "fecha_actualizacion": "2026-07-12",
     "items": [
-      { "codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
-        "stock_actual": 150, "stock_minimo": 400 }
+      { "codigo": "INS-001", "insumo": "Conjunto Sistema PU", "unidad": "g",
+        "stock_actual": 9800000, "stock_minimo": 13433330.0 }
     ]
   }
 }
 ```
 
-Errores: `500 STOCK_NOT_FOUND` si falta el archivo (correr `scripts/seed_example_data.py`).
+Errores: `500 STOCK_NOT_FOUND` si falta el archivo (ver `docs/customization.md`).
 
 ## POST /api/py/ask
 

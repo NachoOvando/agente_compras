@@ -43,8 +43,8 @@ def load_politicas() -> list[dict]:
 def _load_stock_file() -> dict:
     if not config.STOCK_JSON_PATH.exists():
         raise FileNotFoundError(
-            "No se encontró data/source/stock.json. "
-            "Generalo corriendo: python scripts/seed_example_data.py"
+            "No se encontró data/source/stock.json. Creá el archivo a mano "
+            "(ver docs/customization.md)."
         )
     with open(config.STOCK_JSON_PATH, encoding="utf-8") as f:
         return json.load(f)
@@ -68,7 +68,7 @@ def format_bom(bom: list[dict]) -> str:
     """BOM como tabla de texto plano para el contexto del LLM.
 
     La mayoría de los insumos consumen una cantidad fija por par. Algunos
-    (ej. la suela de poliuretano) consumen distinto según el talle del
+    (ej. el conjunto sistema PU) consumen distinto según el talle del
     calzado: para esos, la tabla principal muestra un placeholder y el valor
     real va en un bloque "DETALLE POR TALLE" aparte (solo aparece si hace
     falta, para no inflar el contexto de los insumos fijos).

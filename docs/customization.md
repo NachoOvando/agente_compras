@@ -46,18 +46,20 @@ modelo de embeddings, o `CHUNK_SIZE`/`CHUNK_OVERLAP`.
 
 | Fuente | Archivo | Cómo se actualiza |
 |---|---|---|
-| Fichas de proveedores | `data/source/datos_maincal_EJEMPLO.pdf` | Reemplazar el PDF (mismo esquema: 1 insumo crítico por sección) → correr `python scripts/build_index.py` |
-| BOM del producto | `data/source/bom_cronos_n04.xlsx` | Editar el Excel. Columnas obligatorias: `codigo, insumo, unidad, consumo_por_unidad, critico`. Columnas **opcionales** `T34...T50`: solo para insumos cuyo consumo varía por talle (calzado en 17 talles) — hay que completar las 17 y dejar `consumo_por_unidad` en blanco para esa fila; si no varía, dejar las 17 columnas vacías → correr `python scripts/build_index.py` |
+| Fichas de proveedores | `data/source/Cerco_informacion_Maincal.pdf` | Reemplazar el PDF (1 ficha por insumo crítico: insumo, unidad, proveedor, contacto, origen, presentación) → correr `python scripts/build_index.py` |
+| BOM del producto | `data/source/BOM _ CRONOS-N04.xlsx` | Export crudo de SAP (una fila por componente × talle: `Número de material`, `Componente de lista de materia`, `Cantidad`, `UM`, `Tipo`). Actualizarla es soltar el export nuevo con ese mismo nombre → correr `python scripts/build_index.py`, sin transformar nada a mano. El parser (`build_bom_json()` en `scripts/build_index.py`) agrupa por familia (ignorando el sufijo de talle), detecta consumo fijo vs. variable por talle automáticamente, y fusiona los componentes críticos que forman un insumo lógico único según `CRITICOS_SAP_A_INSUMO` (ej. los 4 componentes del sistema PU → "Conjunto Sistema PU") — agregar ahí si cambia el set de insumos críticos |
 | Políticas de inventario | `data/source/politicas_inventario.xlsx` | Editar el Excel (columnas: `Familia, UM, Política, Lead_Time_dias, Demanda_media_mensual, Desvio_mensual, Stock_Seguridad, ROP_o_Nivel_Objetivo, Stock_Maximo, Cobertura_SS_dias`). El nombre de `Familia` tiene que estar en `FAMILIA_A_INSUMO` (`scripts/build_index.py`) — agregarlo ahí si es un insumo crítico nuevo → correr `python scripts/build_index.py` |
-| Stock actual | `data/source/stock.json` | Editar directo el JSON (`stock_actual` es el input manual/diario; `stock_minimo` es el ROP real de `politicas_inventario.xlsx`), o regenerar con `python scripts/seed_example_data.py` (solo datos de ejemplo; no pisa archivos existentes salvo `--force`) |
+| Stock actual | `data/source/stock.json` | Editar directo el JSON — `stock_actual` es el input manual/diario; `stock_minimo` es el ROP real de `politicas_inventario.xlsx` |
 
 `data/index/` (chunks, embeddings, BOM y políticas normalizadas) se genera
 automáticamente por `build_index.py` — no se edita a mano.
 
 **Insumos críticos**: son los que tienen ficha (PDF), stock y política de
-inventario — hoy Suela de poliuretano (PU), Puntera de acero y Caja de
-empaque. Si ese set cambia, hay que actualizar los 4 archivos de
-`data/source/` de forma consistente (mismo nombre de `insumo` en los cuatro).
+inventario — hoy Conjunto Sistema PU (consumo variable por talle), Puntera
+de acero y Caja de empaque. Si ese set cambia, hay que actualizar
+`CRITICOS_SAP_A_INSUMO`/`FAMILIA_A_INSUMO` (`scripts/build_index.py`) y los
+demás archivos de `data/source/` de forma consistente (mismo nombre de
+`insumo` en los cuatro).
 
 ## Frontend (si querés cambiar textos, colores o preguntas de ejemplo)
 

@@ -46,8 +46,8 @@ motor no importa nada de FastAPI ni de React.
 ## Fase de preparación (offline, al actualizar fuentes)
 
 ```
-python scripts/seed_example_data.py   # regenera BOM.xlsx y stock.json de ejemplo
-python scripts/build_index.py         # PDF → chunks → embeddings; BOM.xlsx → bom.json
+python scripts/build_index.py   # PDF → chunks → embeddings; BOM (export SAP) → bom.json;
+                                 # políticas de inventario → politicas.json
 ```
 
 Los artefactos generados (`data/index/`) se commitean: son parte del deploy.

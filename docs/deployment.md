@@ -19,8 +19,7 @@ python -m venv .venv
 # 2. Entorno
 cp .env.example .env      # completar OPENAI_API_KEY
 
-# 3. Datos e índice (solo la primera vez o al cambiar las fuentes)
-.venv/Scripts/python scripts/seed_example_data.py
+# 3. Índice (solo la primera vez o al cambiar las fuentes en data/source/)
 .venv/Scripts/python scripts/build_index.py
 
 # 4. Levantar ambos servers (Next.js :3000 + FastAPI :8000)

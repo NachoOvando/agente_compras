@@ -3,7 +3,7 @@
   "items": [
     {
       "codigo": "INS-001",
-      "insumo": "Suela de poliuretano (PU)",
+      "insumo": "Conjunto Sistema PU",
       "unidad": "g",
       "stock_actual": 9800000,
       "stock_minimo": 13433330.0

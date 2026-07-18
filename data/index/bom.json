@@ -1,28 +1,28 @@
 [
   {
     "codigo": "INS-001",
-    "insumo": "Suela de poliuretano (PU)",
+    "insumo": "Conjunto Sistema PU",
     "unidad": "g",
     "consumo_por_unidad": null,
     "critico": true,
     "consumo_por_talle": {
-      "34": 369.167,
-      "35": 369.167,
-      "36": 379.167,
-      "37": 379.167,
-      "38": 417.167,
-      "39": 433.167,
-      "40": 449.167,
-      "41": 479.167,
-      "42": 483.167,
-      "43": 533.167,
-      "44": 509.167,
-      "45": 563.167,
-      "46": 563.167,
-      "47": 587.167,
-      "48": 587.167,
-      "49": 587.167,
-      "50": 587.167
+      "34": 384.167,
+      "35": 384.167,
+      "36": 394.167,
+      "37": 394.167,
+      "38": 432.167,
+      "39": 448.167,
+      "40": 464.167,
+      "41": 494.167,
+      "42": 498.167,
+      "43": 548.167,
+      "44": 524.167,
+      "45": 578.167,
+      "46": 578.167,
+      "47": 602.167,
+      "48": 602.167,
+      "49": 602.167,
+      "50": 602.167
     }
   },
   {
@@ -43,7 +43,7 @@
   },
   {
     "codigo": "INS-004",
-    "insumo": "Capellada",
+    "insumo": "CAPELLADA CRONOS, -N, (NA)",
     "unidad": "par",
     "consumo_por_unidad": 1.0,
     "critico": false,
@@ -51,15 +51,15 @@
   },
   {
     "codigo": "INS-005",
-    "insumo": "Plantilla armado",
-    "unidad": "par",
+    "insumo": "CONJUNTO ARMADO",
+    "unidad": "unidad",
     "consumo_por_unidad": 1.0,
     "critico": false,
     "consumo_por_talle": null
   },
   {
     "codigo": "INS-006",
-    "insumo": "Plantilla vista",
+    "insumo": "CORDON TRENZ NEGRO, 0,90m",
     "unidad": "par",
     "consumo_por_unidad": 1.0,
     "critico": false,
@@ -67,48 +67,32 @@
   },
   {
     "codigo": "INS-007",
-    "insumo": "Hilo de coser poliéster",
+    "insumo": "FLYER COND DE USO/HOJA DE INSTRUC VORAN",
+    "unidad": "unidad",
+    "consumo_por_unidad": 1.0,
+    "critico": false,
+    "consumo_por_talle": null
+  },
+  {
+    "codigo": "INS-008",
+    "insumo": "HILO APARADO Nº 40, NEGRO",
     "unidad": "m",
     "consumo_por_unidad": 11.0,
     "critico": false,
     "consumo_por_talle": null
   },
   {
-    "codigo": "INS-008",
-    "insumo": "Cordones trenzados 0.90m",
+    "codigo": "INS-009",
+    "insumo": "PLANT ARM STROB VORAN H450/3",
     "unidad": "par",
     "consumo_por_unidad": 1.0,
     "critico": false,
     "consumo_por_talle": null
   },
   {
-    "codigo": "INS-009",
-    "insumo": "Tinta para PU (gris)",
-    "unidad": "g",
-    "consumo_por_unidad": 12.2,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
     "codigo": "INS-010",
-    "insumo": "Tinta para PU (negro)",
-    "unidad": "g",
-    "consumo_por_unidad": 2.8,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-011",
-    "insumo": "Conjunto armado",
-    "unidad": "unidad",
-    "consumo_por_unidad": 1.0,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-012",
-    "insumo": "Flyer condiciones de uso",
-    "unidad": "unidad",
+    "insumo": "PLANT VIS PLANA 4mm VORAN NEGRO",
+    "unidad": "par",
     "consumo_por_unidad": 1.0,
     "critico": false,
     "consumo_por_talle": null

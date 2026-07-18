@@ -50,7 +50,7 @@ def entorno_de_prueba(tmp_path, monkeypatch):
     bom_path.write_text(json.dumps([
         {"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
          "consumo_por_unidad": 0.19, "critico": True},
-        {"codigo": "INS-002", "insumo": "Suela de poliuretano (PU)", "unidad": "g",
+        {"codigo": "INS-002", "insumo": "Conjunto Sistema PU", "unidad": "g",
          "consumo_por_unidad": None, "critico": True,
          "consumo_por_talle": {"34": 369.167, "40": 478.167, "50": 587.167}},
     ]), encoding="utf-8")

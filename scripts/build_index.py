@@ -13,6 +13,7 @@ Requiere OPENAI_API_KEY en .env. Correr desde la raíz del proyecto:
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -44,67 +45,140 @@ def build_pdf_index() -> None:
     print(f"Índice guardado en {config.DATA_INDEX_DIR}")
 
 
-def build_bom_json() -> None:
-    """Normaliza la BOM. Soporta consumo fijo por par (consumo_por_unidad) y,
-    opcionalmente, consumo variable por talle (columnas T34..T50: si un
-    insumo las trae completas, manda ese detalle y consumo_por_unidad queda
-    en None — nunca conviven un número "de referencia" ambiguo con la tabla
-    real, para que el LLM no pueda usar el valor equivocado por error)."""
-    if not config.BOM_XLSX_PATH.exists():
-        raise FileNotFoundError(
-            f"No se encontró la BOM '{config.BOM_XLSX_PATH}'. "
-            "Generala corriendo: python scripts/seed_example_data.py"
+# Talle: sufijo al final de "Número de material", ej. "CRONOS, -N, 04, T. 40".
+_RE_TALLA = re.compile(r"T\.\s*(\d+)")
+# Familia: descripción del componente sin el sufijo de talle (mismo talle
+# puede venir como ", T. 34" o " T34,5" — cubre ambas formas).
+_RE_SUFIJO_TALLE = re.compile(r",?\s*T\.?\s*\d+([,.]\d+)?$")
+
+# Unidades de medida SAP → unidad amigable usada en el resto del sistema.
+UM_A_UNIDAD = {"G": "g", "KG": "kg", "PAA": "par", "UN": "unidad", "M": "m"}
+
+# Códigos SAP críticos que se combinan en un único insumo crítico "lógico"
+# (ej. el conjunto sistema PU viene de 4 componentes SAP distintos que se
+# compran/consumen juntos). Se matchea por substring sobre la familia SAP
+# (post-eliminación del sufijo de talle), en mayúsculas.
+CRITICOS_SAP_A_INSUMO = {
+    "SISTEMA PU": "Conjunto Sistema PU",
+    "CAJA EMPAQUE": "Caja de empaque",
+    "PUNTERA ACERO": "Puntera de acero",
+}
+# Orden fijo de códigos para los críticos (debe coincidir con data/source/stock.json).
+ORDEN_CRITICOS = ["Conjunto Sistema PU", "Puntera de acero", "Caja de empaque"]
+
+
+def _insumo_de_familia(familia: str, critico: bool) -> str:
+    """Nombre de insumo a partir de la familia SAP. Los críticos se combinan
+    según CRITICOS_SAP_A_INSUMO (ej. los 4 componentes del sistema PU pasan a
+    ser un solo insumo crítico); los no críticos usan la familia tal cual."""
+    if not critico:
+        return familia
+    familia_upper = familia.upper()
+    for clave, insumo in CRITICOS_SAP_A_INSUMO.items():
+        if clave in familia_upper:
+            return insumo
+    raise ValueError(
+        f"Componente crítico '{familia}' no tiene mapeo a insumo conocido. "
+        "Agregalo a CRITICOS_SAP_A_INSUMO en scripts/build_index.py."
+    )
+
+
+def _unidad_de(um) -> str:
+    clave = str(um).strip().upper()
+    if clave not in UM_A_UNIDAD:
+        raise ValueError(
+            f"Unidad de medida SAP desconocida: '{um}'. Agregala a UM_A_UNIDAD "
+            "en scripts/build_index.py."
         )
+    return UM_A_UNIDAD[clave]
+
+
+def build_bom_json() -> None:
+    """Normaliza la BOM a partir del export crudo de SAP (una fila por
+    componente x talle). Agrupa por familia (ignorando el sufijo de talle),
+    fusiona los componentes críticos que forman un mismo insumo lógico (ver
+    CRITICOS_SAP_A_INSUMO) y detecta consumo fijo vs. variable por talle:
+    si el consumo es igual en todos los talles disponibles usa
+    consumo_por_unidad; si varía, exige que estén los 17 talles y arma
+    consumo_por_talle (nunca conviven ambos con un número ambiguo)."""
+    if not config.BOM_XLSX_PATH.exists():
+        raise FileNotFoundError(f"No se encontró la BOM '{config.BOM_XLSX_PATH}'.")
     df = pd.read_excel(config.BOM_XLSX_PATH)
-    columnas = {"codigo", "insumo", "unidad", "consumo_por_unidad", "critico"}
+    columnas = {"Número de material", "Componente de lista de materia", "Cantidad", "UM", "Tipo"}
     faltantes = columnas - set(df.columns)
     if faltantes:
         raise ValueError(f"La BOM no tiene las columnas esperadas: faltan {faltantes}")
 
-    talle_cols = [f"T{t}" for t in config.TALLES]
-    presentes = [c for c in talle_cols if c in df.columns]
-    if 0 < len(presentes) < len(talle_cols):
-        faltan = sorted(set(talle_cols) - set(presentes))
+    df = df.rename(columns={
+        "Número de material": "talla_texto",
+        "Componente de lista de materia": "componente",
+        "Cantidad": "cantidad",
+        "UM": "um",
+        "Tipo": "tipo",
+    })
+
+    df["talla"] = df["talla_texto"].str.extract(_RE_TALLA)[0]
+    sin_talla = df[df["talla"].isna()]
+    if not sin_talla.empty:
         raise ValueError(
-            "La BOM tiene columnas de talle incompletas a nivel archivo: "
-            f"faltan {faltan}. Si algún insumo varía por talle hay que agregar "
-            "las 17 columnas T34..T50; si ninguno varía, no agregar ninguna."
+            "No se pudo extraer el talle de estas filas de 'Número de material': "
+            f"{sorted(sin_talla['talla_texto'].unique().tolist())}"
         )
-    tiene_talles = len(presentes) == len(talle_cols)
 
+    df["familia"] = df["componente"].str.replace(_RE_SUFIJO_TALLE, "", regex=True).str.strip()
+    df["critico"] = df["tipo"].astype(str).str.strip().str.lower() == "critico"
+    df["insumo"] = df.apply(lambda f: _insumo_de_familia(f["familia"], f["critico"]), axis=1)
+    df["unidad"] = df["um"].apply(_unidad_de)
+
+    # Varios componentes SAP pueden mapear al mismo insumo lógico (ej. los 4
+    # del sistema PU): sumar cantidad por insumo+talle.
+    agregado = df.groupby(["insumo", "talla"], as_index=False).agg(
+        cantidad=("cantidad", "sum"), unidad=("unidad", "first"), critico=("critico", "first"),
+    )
+    for insumo, grupo in agregado.groupby("insumo"):
+        if grupo["unidad"].nunique() > 1:
+            raise ValueError(
+                f"El insumo '{insumo}' mezcla unidades de medida distintas: "
+                f"{sorted(grupo['unidad'].unique().tolist())}"
+            )
+        if grupo["critico"].nunique() > 1:
+            raise ValueError(f"El insumo '{insumo}' mezcla filas críticas y no críticas.")
+
+    no_criticos = sorted(set(agregado["insumo"]) - set(ORDEN_CRITICOS))
+    codigo_por_insumo = {
+        nombre: f"INS-{i:03d}"
+        for i, nombre in enumerate(ORDEN_CRITICOS + no_criticos, start=1)
+    }
+
+    talles_esperados = set(config.TALLES)
     bom = []
-    for _, fila in df.iterrows():
-        codigo, insumo = fila["codigo"], fila["insumo"]
-        consumo_por_talle = None
-        consumo_por_unidad = fila["consumo_por_unidad"]
+    for insumo in ORDEN_CRITICOS + no_criticos:
+        grupo = agregado[agregado["insumo"] == insumo]
+        if grupo.empty:
+            continue  # insumo crítico esperado que no aparece en este export
+        unidad = grupo["unidad"].iloc[0]
+        critico = bool(grupo["critico"].iloc[0])
+        valores = {row["talla"]: round(float(row["cantidad"]), 6) for _, row in grupo.iterrows()}
+        valores_unicos = set(valores.values())
 
-        if tiene_talles:
-            valores = fila[talle_cols]
-            completos, algunos = valores.notna().all(), valores.notna().any()
-            if algunos and not completos:
-                faltan = [t for t in config.TALLES if pd.isna(fila[f"T{t}"])]
+        if len(valores_unicos) == 1:
+            consumo_por_unidad, consumo_por_talle = valores_unicos.pop(), None
+        else:
+            faltan = talles_esperados - set(valores)
+            if faltan:
                 raise ValueError(
-                    f"La fila '{codigo}' ({insumo}) tiene talles incompletos en "
-                    f"DETALLE POR TALLE: faltan T{', T'.join(faltan)}. Completá "
-                    "las 17 columnas o dejalas todas en blanco."
+                    f"El insumo '{insumo}' tiene consumo variable por talle pero no "
+                    f"cubre todos los talles: faltan T{', T'.join(sorted(faltan))}."
                 )
-            if completos:
-                consumo_por_talle = {t: float(fila[f"T{t}"]) for t in config.TALLES}
-                if pd.notna(consumo_por_unidad):
-                    print(
-                        f"Aviso: '{codigo}' ({insumo}) tiene consumo_por_unidad Y "
-                        "detalle por talle; se usa el detalle por talle."
-                    )
-                consumo_por_unidad = None
+            consumo_por_unidad = None
+            consumo_por_talle = {t: valores[t] for t in config.TALLES}
 
         bom.append({
-            "codigo": codigo,
+            "codigo": codigo_por_insumo[insumo],
             "insumo": insumo,
-            "unidad": fila["unidad"],
-            "consumo_por_unidad": (
-                float(consumo_por_unidad) if pd.notna(consumo_por_unidad) else None
-            ),
-            "critico": str(fila["critico"]).strip().upper() == "SI",
+            "unidad": unidad,
+            "consumo_por_unidad": consumo_por_unidad,
+            "critico": critico,
             "consumo_por_talle": consumo_por_talle,
         })
 
@@ -118,14 +192,9 @@ def build_bom_json() -> None:
 # inventario (planificación/SAP) y el nombre de insumo usado en la BOM y
 # las fichas de proveedores. Agregar acá si cambia el set de insumos críticos.
 FAMILIA_A_INSUMO = {
-    "CONJ SISTEMA PU": "Suela de poliuretano (PU)",
+    "CONJ SISTEMA PU": "Conjunto Sistema PU",
     "PUNTERA ACERO 59 NORMAL": "Puntera de acero",
     "CAJA EMPAQUE (BOTA/BOTÍN)": "Caja de empaque",
-    # Identidad: los datos de ejemplo (scripts/seed_example_data.py) ya usan
-    # el nombre amigable directamente, sin nomenclatura SAP de por medio.
-    "Suela de poliuretano (PU)": "Suela de poliuretano (PU)",
-    "Puntera de acero": "Puntera de acero",
-    "Caja de empaque": "Caja de empaque",
 }
 
 

@@ -25,8 +25,8 @@ el cerco de información son archivos (PDF + Excel + JSON), ver
 engine/          motor RAG (lógica de negocio, testeable sin servidor)
 api/index.py     FastAPI — solo routing, delega a engine/
 shared/          app-config.json: producto y preguntas demo (fuente única Python+TS)
-scripts/         build_index.py (indexar), seed_example_data.py (datos de ejemplo)
-data/source/     cerco de información: PDF fichas, BOM.xlsx, stock.json, politicas_inventario.xlsx
+scripts/         build_index.py — único script: indexa fichas, BOM (export SAP) y políticas
+data/source/     cerco de información REAL: Cerco_informacion_Maincal.pdf, BOM _ CRONOS-N04.xlsx (export SAP), stock.json, politicas_inventario.xlsx
 data/index/      índice generado (chunks/embeddings/bom.json/politicas.json) — no editar a mano
 src/             frontend Next.js: src/app/, src/components/, src/lib/
 tests/           pytest del motor
@@ -41,7 +41,7 @@ docs/            architecture.md, api-reference.md, deployment.md, customization
 - **System prompt / reglas del cerco**: `engine/prompts.py`.
 - **Modelos, TOP_K, temperature, chunk size**: `engine/config.py`.
 - **Armado de contexto (BOM + stock + fichas + políticas de inventario)**: `engine/context.py`.
-- **Insumos críticos actuales**: Suela de poliuretano (PU) — consumo variable por talle (T34–T50) —, Puntera de acero y Caja de empaque (`data/source/politicas_inventario.xlsx`, mapeo de nombres SAP en `FAMILIA_A_INSUMO` de `scripts/build_index.py`).
+- **Insumos críticos actuales**: Conjunto Sistema PU — consumo variable por talle (T34–T50), fusión de 4 componentes SAP —, Puntera de acero y Caja de empaque. Mapeo SAP→insumo en `CRITICOS_SAP_A_INSUMO` (BOM) y `FAMILIA_A_INSUMO` (políticas), ambos en `scripts/build_index.py`.
 - **Búsqueda semántica**: `engine/retrieval.py`.
 - Cambiar el PDF, la BOM o `CHUNK_SIZE`/modelo de embeddings requiere re-indexar: `python scripts/build_index.py`.
 
@@ -72,12 +72,12 @@ En particular `SPEC_asistente_compras.md` (brief completo) y
   lint, typecheck, build de producción, y prueba manual end-to-end en navegador).
 - UI rediseñada con el skill `ui-ux-pro-max` (paleta "Enterprise SaaS", Plus
   Jakarta Sans, íconos Phosphor, accesibilidad AA).
-- `OPENAI_API_KEY` real cargada y el índice de embeddings ya se generó al
-  menos una vez con datos reales.
-- **BOM y políticas de inventario son datos REALES de Maincal** (BOM
-  exportada de SAP con 17 talles; políticas con lead time/demanda/ROP reales
-  para los 3 insumos críticos). `stock_actual` en `stock.json` sigue siendo
-  un placeholder — es el input manual/diario, no vino de ningún archivo real.
-- **Pendiente**: fichas de proveedores (PDF) reales para Suela de poliuretano
-  (PU), Puntera de acero y Caja de empaque — el PDF actual todavía describe
-  otro set de insumos (cuero/suela/puntera) de la versión de ejemplo original.
+- `OPENAI_API_KEY` real cargada y el índice se generó con datos reales.
+- **Las 4 fuentes del cerco son datos REALES de Maincal**: fichas de
+  proveedores (`Cerco_informacion_Maincal.pdf`), BOM (export crudo de SAP,
+  17 talles, parseado directo por `build_bom_json()`), políticas de
+  inventario (lead time/demanda/ROP reales para los 3 insumos críticos) y
+  stock (`stock_actual` es el input manual/diario, no viene de ningún
+  archivo — el resto de `stock.json` sí es real).
+- `scripts/seed_example_data.py` se eliminó (datos ficticios ya superados
+  por los reales; el flujo de datos de ejemplo ya no existe).

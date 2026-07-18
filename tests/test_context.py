@@ -103,7 +103,7 @@ def test_bom_faltante_da_error_claro(monkeypatch, tmp_path):
 
 def test_format_bom_insumo_talle_dependiente_muestra_detalle():
     bom = [
-        {"codigo": "INS-002", "insumo": "Suela de poliuretano (PU)", "unidad": "g",
+        {"codigo": "INS-002", "insumo": "Conjunto Sistema PU", "unidad": "g",
          "consumo_por_unidad": None, "critico": True,
          "consumo_por_talle": {"34": 369.167, "40": 478.167, "50": 587.167}},
     ]
@@ -127,7 +127,7 @@ def test_format_bom_insumo_fijo_no_afectado_por_conviven_con_variable():
     bom = [
         {"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
          "consumo_por_unidad": 0.19, "critico": True},
-        {"codigo": "INS-002", "insumo": "Suela de poliuretano (PU)", "unidad": "g",
+        {"codigo": "INS-002", "insumo": "Conjunto Sistema PU", "unidad": "g",
          "consumo_por_unidad": None, "critico": True,
          "consumo_por_talle": {"34": 369.167, "50": 587.167}},
     ]
