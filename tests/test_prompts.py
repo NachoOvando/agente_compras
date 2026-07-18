@@ -11,6 +11,14 @@ def test_system_prompt_define_el_cerco():
     assert "lead time" in sp
 
 
+def test_system_prompt_aclara_que_bom_cubre_insumos_no_criticos():
+    """La BOM se inyecta completa (críticos y no); el prompt no debe hacer
+    que el modelo rechace consultas de consumo de insumos no críticos."""
+    sp = prompts.SYSTEM_PROMPT
+    assert "no críticos" in sp
+    assert "TODOS los insumos" in sp
+
+
 def test_user_prompt_combina_contexto_y_pregunta():
     up = prompts.build_user_prompt("¿Cuál es el lead time?", "CTX-DE-PRUEBA")
     assert "CTX-DE-PRUEBA" in up

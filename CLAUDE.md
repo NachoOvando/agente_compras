@@ -28,7 +28,7 @@ shared/          app-config.json: producto y preguntas demo (fuente única Pytho
 scripts/         build_index.py (indexar), seed_example_data.py (datos de ejemplo)
 data/source/     cerco de información: PDF fichas, BOM.xlsx, stock.json
 data/index/      índice generado (chunks.json, embeddings.npy, bom.json) — no editar a mano
-app/, components/, lib/   frontend Next.js
+src/             frontend Next.js: src/app/, src/components/, src/lib/
 tests/           pytest del motor
 docs/            architecture.md, api-reference.md, deployment.md, customization.md
 .claude/skills/  skill ui-ux-pro-max (diseño) instalado — ver docs/architecture.md

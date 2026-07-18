@@ -42,7 +42,7 @@ TEMPERATURE = 0.1  # baja: respuestas fieles al dato, sin creatividad
 MAX_TOKENS = 800
 
 # Contenido compartido con el frontend (fuente única: shared/app-config.json,
-# que lib/app-config.ts importa del lado TypeScript).
+# que src/lib/app-config.ts importa del lado TypeScript).
 def _load_shared_config() -> dict:
     if not SHARED_CONFIG_PATH.exists():
         raise FileNotFoundError(
