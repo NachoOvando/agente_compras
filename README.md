@@ -34,7 +34,7 @@ Detalle completo en [docs/deployment.md](docs/deployment.md).
 - `data/source/` — cerco de información (PDF de fichas, BOM export de SAP, stock.json, políticas de inventario).
 - `data/index/` — índice precomputado (chunks + embeddings + BOM y políticas normalizadas).
 - `tests/` — pytest del motor (sin llamadas a la API de OpenAI).
-- `docs/` — [arquitectura](docs/architecture.md), [API](docs/api-reference.md), [deploy](docs/deployment.md), [personalización](docs/customization.md).
+- `docs/` — [arquitectura](docs/architecture.md), [API](docs/api-reference.md), [deploy](docs/deployment.md), [personalización](docs/customization.md), [progreso](docs/progress.md).
 - `CLAUDE.md` — contexto del proyecto para Claude Code (dónde editar RAG, API key, estado actual).
 
 ## Datos
