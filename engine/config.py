@@ -44,6 +44,10 @@ CHUNK_OVERLAP = 300
 EMBEDDING_BATCH_SIZE = 100
 TOP_K = 3
 
+# Memoria de conversación: cuántos turnos (pregunta+respuesta) previos se
+# reenvían al LLM como historial. Cada turno = 2 mensajes (user+assistant).
+MAX_HISTORY_TURNS = 10
+
 # --- Parámetros de generación ---
 TEMPERATURE = 0.1  # baja: respuestas fieles al dato, sin creatividad
 MAX_TOKENS = 800

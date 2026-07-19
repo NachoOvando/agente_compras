@@ -137,6 +137,12 @@ def format_stock(stock: dict) -> str:
             f"{item['stock_actual']} {item['unidad']}, stock mínimo "
             f"{item['stock_minimo']} {item['unidad']}"
         )
+    lineas.append("")
+    lineas.append(
+        "Nota: los insumos que no aparecen en este listado (no críticos) se "
+        "consideran con disponibilidad suficiente y no son limitantes para "
+        "la producción."
+    )
     return "\n".join(lineas)
 
 

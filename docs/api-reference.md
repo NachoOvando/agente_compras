@@ -58,7 +58,7 @@ Response:
 ```json
 {
   "data": {
-    "answer": "La prioridad de compra es el cuero vacuno...",
+    "answer": "La prioridad de compra es el conjunto sistema PU...",
     "sources": [ { "index": 0, "score": 0.62 } ]
   }
 }

@@ -7,15 +7,16 @@ Uso:
 
 import sys
 
-from engine.config import PREGUNTAS_DEMO
+from engine.config import MAX_HISTORY_TURNS, PREGUNTAS_DEMO
 from engine.generate import rag_answer
 
 
-def _responder(pregunta: str) -> None:
+def _responder(pregunta: str, history: list[dict[str, str]] | None = None) -> str:
     print(f"\nPREGUNTA: {pregunta}")
-    resultado = rag_answer(pregunta)
+    resultado = rag_answer(pregunta, history=history)
     print(f"RESPUESTA:\n{resultado['answer']}")
     print("-" * 60)
+    return resultado["answer"]
 
 
 def modo_demo() -> None:
@@ -26,12 +27,16 @@ def modo_demo() -> None:
 
 def modo_interactivo() -> None:
     print("Asistente de compras Maincal. Escribí 'salir' para terminar.\n")
+    historial: list[dict[str, str]] = []
     while True:
         pregunta = input("Tu pregunta: ").strip()
         if pregunta.lower() in ("salir", "exit", "quit", ""):
             print("Hasta luego.")
             break
-        _responder(pregunta)
+        respuesta = _responder(pregunta, history=historial)
+        historial.append({"role": "user", "content": pregunta})
+        historial.append({"role": "assistant", "content": respuesta})
+        historial = historial[-(MAX_HISTORY_TURNS * 2):]
 
 
 if __name__ == "__main__":

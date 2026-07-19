@@ -1,100 +1,10 @@
 [
   {
-    "codigo": "INS-001",
-    "insumo": "Conjunto Sistema PU",
-    "unidad": "g",
-    "consumo_por_unidad": null,
-    "critico": true,
-    "consumo_por_talle": {
-      "34": 384.167,
-      "35": 384.167,
-      "36": 394.167,
-      "37": 394.167,
-      "38": 432.167,
-      "39": 448.167,
-      "40": 464.167,
-      "41": 494.167,
-      "42": 498.167,
-      "43": 548.167,
-      "44": 524.167,
-      "45": 578.167,
-      "46": 578.167,
-      "47": 602.167,
-      "48": 602.167,
-      "49": 602.167,
-      "50": 602.167
-    }
-  },
-  {
-    "codigo": "INS-002",
-    "insumo": "Puntera de acero",
-    "unidad": "par",
-    "consumo_por_unidad": 1.0,
-    "critico": true,
-    "consumo_por_talle": null
-  },
-  {
     "codigo": "INS-003",
     "insumo": "Caja de empaque",
     "unidad": "unidad",
     "consumo_por_unidad": 1.0,
     "critico": true,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-004",
-    "insumo": "CAPELLADA CRONOS, -N, (NA)",
-    "unidad": "par",
-    "consumo_por_unidad": 1.0,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-005",
-    "insumo": "CONJUNTO ARMADO",
-    "unidad": "unidad",
-    "consumo_por_unidad": 1.0,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-006",
-    "insumo": "CORDON TRENZ NEGRO, 0,90m",
-    "unidad": "par",
-    "consumo_por_unidad": 1.0,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-007",
-    "insumo": "FLYER COND DE USO/HOJA DE INSTRUC VORAN",
-    "unidad": "unidad",
-    "consumo_por_unidad": 1.0,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-008",
-    "insumo": "HILO APARADO Nº 40, NEGRO",
-    "unidad": "m",
-    "consumo_por_unidad": 11.0,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-009",
-    "insumo": "PLANT ARM STROB VORAN H450/3",
-    "unidad": "par",
-    "consumo_por_unidad": 1.0,
-    "critico": false,
-    "consumo_por_talle": null
-  },
-  {
-    "codigo": "INS-010",
-    "insumo": "PLANT VIS PLANA 4mm VORAN NEGRO",
-    "unidad": "par",
-    "consumo_por_unidad": 1.0,
-    "critico": false,
     "consumo_por_talle": null
   }
 ]

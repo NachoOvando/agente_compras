@@ -7,11 +7,16 @@ from engine.indexing import get_embeddings
 
 
 def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
-               k: int = config.TOP_K, client=None) -> dict:
+               k: int = config.TOP_K, client=None,
+               history: list[dict[str, str]] | None = None) -> dict:
     """Responde una pregunta usando el cerco de información.
 
     Devuelve {"answer": str, "sources": [{"index", "score"}, ...]}.
     `client` es inyectable para tests; por defecto se crea el cliente real.
+    `history` es una lista opcional de turnos previos {"role": "user"|
+    "assistant", "content": str} — solo pregunta y respuesta, nunca el
+    contexto armado — que se antepone a la pregunta actual para que el
+    modelo entienda repreguntas ("¿y cuál es su proveedor?").
     """
     if not question or not question.strip():
         raise ValueError("La pregunta no puede estar vacía.")
@@ -33,12 +38,16 @@ def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
     full_context = context.build_context(retrieved, bom, stock, politicas)
 
     # GENERATE
+    messages = [{"role": "system", "content": prompts.SYSTEM_PROMPT}]
+    if history:
+        messages.extend(history)
+    messages.append(
+        {"role": "user", "content": prompts.build_user_prompt(question, full_context)}
+    )
+
     response = client.chat.completions.create(
         model=config.CHAT_MODEL,
-        messages=[
-            {"role": "system", "content": prompts.SYSTEM_PROMPT},
-            {"role": "user", "content": prompts.build_user_prompt(question, full_context)},
-        ],
+        messages=messages,
         temperature=config.TEMPERATURE,
         max_tokens=config.MAX_TOKENS,
     )

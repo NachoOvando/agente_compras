@@ -38,9 +38,9 @@ def test_stock_no_encontrado_da_500_con_codigo(monkeypatch):
 
 
 def test_ask_devuelve_answer_y_sources(monkeypatch):
-    resultado = {"answer": "comprar cuero", "sources": [{"index": 0, "score": 0.9}]}
+    resultado = {"answer": "comprar puntera", "sources": [{"index": 0, "score": 0.9}]}
     monkeypatch.setattr(api_index, "rag_answer",
-                        lambda q, stock_overrides=None: resultado)
+                        lambda q, stock_overrides=None, history=None: resultado)
     r = client.post("/api/py/ask", json={"question": "¿qué compro?"})
     assert r.status_code == 200
     assert r.json() == {"data": resultado}
@@ -49,7 +49,7 @@ def test_ask_devuelve_answer_y_sources(monkeypatch):
 def test_ask_pasa_stock_overrides(monkeypatch):
     capturado = {}
 
-    def fake(q, stock_overrides=None):
+    def fake(q, stock_overrides=None, history=None):
         capturado["overrides"] = stock_overrides
         return {"answer": "ok", "sources": []}
 
@@ -57,6 +57,61 @@ def test_ask_pasa_stock_overrides(monkeypatch):
     client.post("/api/py/ask",
                 json={"question": "p", "stockOverrides": {"INS-001": 500}})
     assert capturado["overrides"] == {"INS-001": 500}
+
+
+def test_ask_pasa_historial(monkeypatch):
+    capturado = {}
+
+    def fake(q, stock_overrides=None, history=None):
+        capturado["history"] = history
+        return {"answer": "ok", "sources": []}
+
+    monkeypatch.setattr(api_index, "rag_answer", fake)
+    client.post("/api/py/ask", json={
+        "question": "p",
+        "history": [
+            {"role": "user", "content": "hola"},
+            {"role": "assistant", "content": "hola!"},
+        ],
+    })
+    assert capturado["history"] == [
+        {"role": "user", "content": "hola"},
+        {"role": "assistant", "content": "hola!"},
+    ]
+
+
+def test_ask_sin_historial_pasa_none(monkeypatch):
+    capturado = {}
+
+    def fake(q, stock_overrides=None, history=None):
+        capturado["history"] = history
+        return {"answer": "ok", "sources": []}
+
+    monkeypatch.setattr(api_index, "rag_answer", fake)
+    client.post("/api/py/ask", json={"question": "p"})
+    assert capturado["history"] is None
+
+
+def test_ask_historial_con_rol_invalido_da_422(monkeypatch):
+    monkeypatch.setattr(
+        api_index, "rag_answer",
+        lambda q, stock_overrides=None, history=None: {"answer": "ok", "sources": []},
+    )
+    r = client.post("/api/py/ask", json={
+        "question": "p",
+        "history": [{"role": "system", "content": "hola"}],
+    })
+    assert r.status_code == 422
+
+
+def test_ask_historial_mas_largo_que_el_tope_da_422(monkeypatch):
+    monkeypatch.setattr(
+        api_index, "rag_answer",
+        lambda q, stock_overrides=None, history=None: {"answer": "ok", "sources": []},
+    )
+    historial_largo = [{"role": "user", "content": "x"}] * (api_index.engine_config.MAX_HISTORY_TURNS * 2 + 1)
+    r = client.post("/api/py/ask", json={"question": "p", "history": historial_largo})
+    assert r.status_code == 422
 
 
 def test_ask_pregunta_vacia_da_422():
@@ -69,7 +124,7 @@ def test_ask_pregunta_vacia_da_422():
     (ValueError("falta OPENAI_API_KEY"), 400, "INVALID_REQUEST"),
 ])
 def test_ask_mapea_errores_conocidos(monkeypatch, excepcion, status, code):
-    def falla(q, stock_overrides=None):
+    def falla(q, stock_overrides=None, history=None):
         raise excepcion
     monkeypatch.setattr(api_index, "rag_answer", falla)
     r = client.post("/api/py/ask", json={"question": "pregunta"})
@@ -78,7 +133,7 @@ def test_ask_mapea_errores_conocidos(monkeypatch, excepcion, status, code):
 
 
 def test_ask_error_inesperado_da_502_sin_filtrar_detalles(monkeypatch):
-    def falla(q, stock_overrides=None):
+    def falla(q, stock_overrides=None, history=None):
         raise RuntimeError("detalle-interno-secreto-xyz")
     monkeypatch.setattr(api_index, "rag_answer", falla)
     r = client.post("/api/py/ask", json={"question": "pregunta"})

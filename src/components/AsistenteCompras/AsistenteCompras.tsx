@@ -6,7 +6,11 @@ import SampleQuestions from '@/components/SampleQuestions/SampleQuestions';
 import StockPanel from '@/components/StockPanel/StockPanel';
 import { askQuestion, fetchStock } from '@/lib/api-client';
 import { appConfig } from '@/lib/app-config';
-import type { ChatMessage, Stock } from '@/lib/types';
+import type { ChatMessage, HistoryTurn, Stock } from '@/lib/types';
+
+// Mismo tope que el server (engine.config.MAX_HISTORY_TURNS * 2), para no
+// mandar un historial que el backend igual va a rechazar con 422.
+const MAX_HISTORY_MESSAGES = 20;
 
 export default function AsistenteCompras() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -24,6 +28,14 @@ export default function AsistenteCompras() {
   const handleSend = useCallback(
     async (question: string) => {
       if (loading) return;
+      // Historial ANTES de agregar la pregunta nueva (que va aparte, como
+      // `question`) — solo turnos válidos, sin errores, con tope al igual
+      // que el server.
+      const history: HistoryTurn[] = messages
+        .filter((m) => !m.isError)
+        .slice(-MAX_HISTORY_MESSAGES)
+        .map((m) => ({ role: m.role, content: m.content }));
+
       setMessages((prev) => [...prev, { role: 'user', content: question }]);
       setLoading(true);
       try {
@@ -31,6 +43,7 @@ export default function AsistenteCompras() {
         const result = await askQuestion(
           question,
           hasOverrides ? overrides : undefined,
+          history.length > 0 ? history : undefined,
         );
         setMessages((prev) => [
           ...prev,
@@ -50,7 +63,7 @@ export default function AsistenteCompras() {
         setLoading(false);
       }
     },
-    [loading, overrides],
+    [loading, overrides, messages],
   );
 
   return (

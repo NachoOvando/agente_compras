@@ -23,16 +23,17 @@ import numpy as np
 import pandas as pd
 
 from engine import config
-from engine.indexing import get_embeddings, read_pdf_text, split_text_chunks
+from engine.indexing import get_embeddings, read_pdf_pages, split_pages_into_chunks
 
 
 def build_pdf_index() -> None:
-    texto = read_pdf_text(config.PDF_FICHAS_PATH)
-    print(f"Texto extraído del PDF: {len(texto):,} caracteres")
+    paginas = read_pdf_pages(config.PDF_FICHAS_PATH)
+    print(f"PDF leído: {len(paginas)} fichas (páginas)")
 
-    chunks = split_text_chunks(texto)
-    print(f"Texto dividido en {len(chunks)} chunks "
-          f"(tamaño {config.CHUNK_SIZE}, overlap {config.CHUNK_OVERLAP})")
+    chunks = split_pages_into_chunks(paginas)
+    print(f"Chunks generados: {len(chunks)} (1 por ficha, salvo fichas más largas "
+          f"que {config.CHUNK_SIZE} caracteres, que se subdividen con overlap "
+          f"{config.CHUNK_OVERLAP})")
 
     client = config.get_openai_client()
     embeddings = get_embeddings(client, chunks)

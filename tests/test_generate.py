@@ -48,19 +48,19 @@ def entorno_de_prueba(tmp_path, monkeypatch):
     stock_path = tmp_path / "stock.json"
     politicas_path = tmp_path / "politicas.json"
     bom_path.write_text(json.dumps([
-        {"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
-         "consumo_por_unidad": 0.19, "critico": True},
+        {"codigo": "INS-001", "insumo": "Puntera de acero", "unidad": "par",
+         "consumo_por_unidad": 1.0, "critico": True},
         {"codigo": "INS-002", "insumo": "Conjunto Sistema PU", "unidad": "g",
          "consumo_por_unidad": None, "critico": True,
          "consumo_por_talle": {"34": 369.167, "40": 478.167, "50": 587.167}},
     ]), encoding="utf-8")
     stock_path.write_text(json.dumps({
         "fecha_actualizacion": "2026-07-12",
-        "items": [{"codigo": "INS-001", "insumo": "Cuero vacuno", "unidad": "m2",
+        "items": [{"codigo": "INS-001", "insumo": "Puntera de acero", "unidad": "par",
                    "stock_actual": 150, "stock_minimo": 400}],
     }), encoding="utf-8")
     politicas_path.write_text(json.dumps([
-        {"insumo": "Cuero vacuno", "politica": "Revisión periódica (R,S)",
+        {"insumo": "Puntera de acero", "politica": "Revisión periódica (R,S)",
          "lead_time_dias": 15, "demanda_media_mensual": 850, "desvio_mensual": 40,
          "stock_seguridad": 100, "rop": 400, "stock_maximo": 900,
          "cobertura_ss_dias": 3.5},
@@ -73,7 +73,7 @@ def entorno_de_prueba(tmp_path, monkeypatch):
     context.load_politicas.cache_clear()
 
     # Índice fake: 3 chunks con embeddings ortogonales
-    chunks = ("ficha del cuero vacuno", "ficha de la suela PU", "ficha de la puntera")
+    chunks = ("ficha de la puntera de acero", "ficha del sistema PU", "ficha de la caja de empaque")
     embeddings = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     monkeypatch.setattr(retrieval, "load_index", lambda: (chunks, embeddings))
 
@@ -88,10 +88,10 @@ def entorno_de_prueba(tmp_path, monkeypatch):
 
 
 def test_rag_answer_devuelve_answer_y_sources():
-    client = FakeClient(answer="comprar cuero primero")
+    client = FakeClient(answer="comprar puntera primero")
     resultado = generate.rag_answer("¿qué compro primero?", client=client)
 
-    assert resultado["answer"] == "comprar cuero primero"
+    assert resultado["answer"] == "comprar puntera primero"
     assert len(resultado["sources"]) == config.TOP_K
     # sources expone index+score pero NO el texto del chunk
     assert set(resultado["sources"][0].keys()) == {"index", "score"}
@@ -117,9 +117,9 @@ def test_rag_answer_construye_prompt_con_contexto_completo():
 
     [llamada] = client.chat_calls
     user_prompt = llamada["messages"][1]["content"]
-    assert "ficha del cuero vacuno" in user_prompt  # chunk recuperado
-    assert "INS-001 | Cuero vacuno" in user_prompt  # BOM inyectada
-    assert "stock actual 150 m2" in user_prompt     # stock inyectado
+    assert "ficha de la puntera de acero" in user_prompt  # chunk recuperado
+    assert "INS-001 | Puntera de acero" in user_prompt    # BOM inyectada
+    assert "stock actual 150 par" in user_prompt          # stock inyectado
     assert "¿alcanza el stock?" in user_prompt      # la pregunta
     assert llamada["model"] == config.CHAT_MODEL
     assert llamada["temperature"] == config.TEMPERATURE
@@ -129,7 +129,7 @@ def test_rag_answer_aplica_stock_overrides():
     client = FakeClient()
     generate.rag_answer("pregunta", stock_overrides={"INS-001": 999}, client=client)
     user_prompt = client.chat_calls[0]["messages"][1]["content"]
-    assert "stock actual 999 m2" in user_prompt
+    assert "stock actual 999 par" in user_prompt
 
 
 def test_rag_answer_bom_faltante_propaga_filenotfound(monkeypatch, tmp_path):
@@ -152,7 +152,34 @@ def test_rag_answer_incluye_detalle_por_talle_en_el_contexto():
 
 def test_rag_answer_incluye_politicas_de_inventario_en_el_contexto():
     client = FakeClient()
-    generate.rag_answer("¿por qué es prioritario el cuero?", client=client)
+    generate.rag_answer("¿por qué es prioritaria la puntera?", client=client)
     user_prompt = client.chat_calls[0]["messages"][1]["content"]
     assert "POLÍTICAS DE INVENTARIO" in user_prompt
     assert "Revisión periódica (R,S)" in user_prompt
+
+
+def test_rag_answer_sin_historial_manda_solo_system_y_user():
+    client = FakeClient()
+    generate.rag_answer("pregunta", client=client)
+    [llamada] = client.chat_calls
+    assert len(llamada["messages"]) == 2
+    assert llamada["messages"][0]["role"] == "system"
+    assert llamada["messages"][1]["role"] == "user"
+
+
+def test_rag_answer_antepone_el_historial_entre_system_y_la_pregunta_actual():
+    client = FakeClient()
+    historial = [
+        {"role": "user", "content": "¿cuál es el proveedor de la puntera?"},
+        {"role": "assistant", "content": "Flecksteel Ind. Art. Metálicos Ltda."},
+    ]
+    generate.rag_answer("¿y su lead time?", client=client, history=historial)
+
+    [llamada] = client.chat_calls
+    mensajes = llamada["messages"]
+    assert len(mensajes) == 4
+    assert mensajes[0]["role"] == "system"
+    assert mensajes[1] == historial[0]
+    assert mensajes[2] == historial[1]
+    assert mensajes[3]["role"] == "user"
+    assert "¿y su lead time?" in mensajes[3]["content"]
