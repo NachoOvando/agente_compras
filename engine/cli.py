@@ -26,7 +26,7 @@ def modo_demo() -> None:
 
 
 def modo_interactivo() -> None:
-    print("Asistente de compras Maincal. Escribí 'salir' para terminar.\n")
+    print("Asistente de compras. Escribí 'salir' para terminar.\n")
     historial: list[dict[str, str]] = []
     while True:
         pregunta = input("Tu pregunta: ").strip()

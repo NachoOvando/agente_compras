@@ -1,4 +1,4 @@
-# CLAUDE.md — Asistente de Compras Maincal
+# CLAUDE.md — Asistente de Compras
 
 Contexto del proyecto para Claude Code. Complementa (no reemplaza) las
 convenciones globales de `~/.claude/CLAUDE.md` — en caso de conflicto, este
@@ -8,7 +8,7 @@ archivo tiene precedencia por ser específico del repo.
 
 Prototipo de tesis: asistente conversacional (LLM + RAG) que recomienda
 prioridades de compra de insumos críticos del producto **Cronos-N04** para
-Maincal S.A., respondiendo **exclusivamente** con datos de la empresa (el
+la empresa, respondiendo **exclusivamente** con datos de la empresa (el
 "cerco de información"). Si el dato no está ahí, dice que no lo tiene — nunca
 inventa. Spec original en la carpeta de la tesis (ver "Material fuente" abajo).
 
@@ -26,7 +26,7 @@ engine/          motor RAG (lógica de negocio, testeable sin servidor)
 api/index.py     FastAPI — solo routing, delega a engine/
 shared/          app-config.json: producto y preguntas demo (fuente única Python+TS)
 scripts/         build_index.py — único script: indexa fichas, BOM (export SAP) y políticas
-data/source/     cerco de información REAL: Cerco_informacion_Maincal.pdf, BOM _ CRONOS-N04.xlsx (export SAP), stock.json, politicas_inventario.xlsx
+data/source/     cerco de información REAL: Cerco_informacion.pdf, BOM _ CRONOS-N04.xlsx (export SAP), stock.json, politicas_inventario.xlsx
 data/index/      índice generado (chunks/embeddings/bom.json/politicas.json) — no editar a mano
 src/             frontend Next.js: src/app/, src/components/, src/lib/
 tests/           pytest del motor
@@ -73,8 +73,8 @@ En particular `SPEC_asistente_compras.md` (brief completo) y
 - UI rediseñada con el skill `ui-ux-pro-max` (paleta "Enterprise SaaS", Plus
   Jakarta Sans, íconos Phosphor, accesibilidad AA).
 - `OPENAI_API_KEY` real cargada y el índice se generó con datos reales.
-- **Las 4 fuentes del cerco son datos REALES de Maincal**: fichas de
-  proveedores (`Cerco_informacion_Maincal.pdf`), BOM (export crudo de SAP,
+- **Las 4 fuentes del cerco son datos REALES de la empresa**: fichas de
+  proveedores (`Cerco_informacion.pdf`), BOM (export crudo de SAP,
   17 talles, parseado directo por `build_bom_json()`), políticas de
   inventario (lead time/demanda/ROP reales para los 3 insumos críticos) y
   stock (`stock_actual` es el input manual/diario, no viene de ningún

@@ -27,7 +27,7 @@ from engine import context as engine_context
 from engine.generate import rag_answer
 
 app = FastAPI(
-    title="Asistente de Compras Maincal",
+    title="Asistente de Compras",
     docs_url="/api/py/docs",
     openapi_url="/api/py/openapi.json",
 )

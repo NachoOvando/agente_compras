@@ -1,4 +1,4 @@
-# Progreso del proyecto — Asistente de Compras Maincal
+# Progreso del proyecto — Asistente de Compras
 
 > Snapshot al **19/07/2026**. Documento de estado para retomar contexto rápido
 > (propio, para la tesis, o para una sesión nueva de Claude Code). No es un
@@ -10,7 +10,7 @@
 
 Prototipo de tesis: asistente conversacional (LLM + RAG) que recomienda
 prioridades de compra de insumos críticos del producto **Cronos-N04** para
-Maincal S.A., respondiendo **exclusivamente** con datos reales de la empresa
+la empresa, respondiendo **exclusivamente** con datos reales de la empresa
 (el "cerco de información"). Si el dato no está ahí, dice que no lo tiene —
 nunca inventa. Empezó como notebook (`chatbot_maincal_v2.ipynb` /
 `chatbot_compras.ipynb`, en la carpeta de la tesis) y se reconstruyó como web
@@ -23,7 +23,7 @@ Las 4 fuentes del cerco de información ya no son ficticias:
 
 | Fuente | Archivo | Contenido |
 |---|---|---|
-| Fichas de proveedores | `data/source/Cerco_informacion_Maincal.pdf` | 3 fichas reales (Poliresinas San Luis, Flecksteel, Papel Pack) |
+| Fichas de proveedores | `data/source/Cerco_informacion.pdf` | 3 fichas reales (Poliresinas San Luis, Flecksteel, Papel Pack) |
 | BOM del producto | `data/source/BOM _ CRONOS-N04.xlsx` | Export crudo de SAP (220 filas, 17 talles, columna `Tipo` Critico/No Critico) |
 | Políticas de inventario | `data/source/politicas_inventario.xlsx` | Lead time, demanda, stock de seguridad, ROP reales (análisis de la tesis) |
 | Stock actual | `data/source/stock.json` | `stock_minimo` = ROP real; `stock_actual` es el único dato todavía placeholder (es el input manual/diario por diseño) |

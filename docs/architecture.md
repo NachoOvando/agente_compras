@@ -1,4 +1,4 @@
-# Arquitectura — Asistente de Compras Maincal (LLM + RAG)
+# Arquitectura — Asistente de Compras (LLM + RAG)
 
 ## Qué es
 

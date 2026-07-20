@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_SOURCE_DIR = BASE_DIR / "data" / "source"
 DATA_INDEX_DIR = BASE_DIR / "data" / "index"
 
-PDF_FICHAS_PATH = DATA_SOURCE_DIR / "Cerco_informacion_Maincal.pdf"
+PDF_FICHAS_PATH = DATA_SOURCE_DIR / "Cerco_informacion.pdf"
 BOM_XLSX_PATH = DATA_SOURCE_DIR / "BOM _ CRONOS-N04.xlsx"
 STOCK_JSON_PATH = DATA_SOURCE_DIR / "stock.json"
 POLITICAS_XLSX_PATH = DATA_SOURCE_DIR / "politicas_inventario.xlsx"

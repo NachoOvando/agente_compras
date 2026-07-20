@@ -1,4 +1,4 @@
-# Asistente de Compras — Maincal S.A. (LLM + RAG)
+# Asistente de Compras (LLM + RAG)
 
 Prototipo de tesis: asistente conversacional que recomienda prioridades de
 compra de insumos críticos del producto **Cronos-N04**, respondiendo
@@ -39,7 +39,7 @@ Detalle completo en [docs/deployment.md](docs/deployment.md).
 
 ## Datos
 
-Los datos son **reales de Maincal S.A.**: fichas de proveedores (PDF), BOM
+Los datos son **reales de la empresa**: fichas de proveedores (PDF), BOM
 (export de SAP) y políticas de inventario. `stock_actual` en `stock.json` es
 el input manual/diario. Ver [docs/customization.md](docs/customization.md)
 para el flujo de actualización.
