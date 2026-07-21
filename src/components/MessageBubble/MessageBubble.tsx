@@ -29,7 +29,9 @@ const markdownComponents = {
     </div>
   ),
   th: ({ children }: { children?: ReactNode }) => (
-    <th className="border border-border px-2 py-1 text-left font-semibold">{children}</th>
+    <th className="border border-border bg-border/30 px-2 py-1 text-left font-semibold">
+      {children}
+    </th>
   ),
   td: ({ children }: { children?: ReactNode }) => (
     <td className="border border-border px-2 py-1">{children}</td>

@@ -51,7 +51,7 @@ MAX_HISTORY_TURNS = 10
 
 # --- Parámetros de generación ---
 TEMPERATURE = 0.1  # baja: respuestas fieles al dato, sin creatividad
-MAX_TOKENS = 800
+MAX_TOKENS = 1500  # una respuesta con curva de talles (17 filas x 2 tablas) puede acercarse a 800
 
 # Contenido compartido con el frontend (fuente única: shared/app-config.json,
 # que src/lib/app-config.ts importa del lado TypeScript).

@@ -73,6 +73,14 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
 - **Markdown en el chat**: `MessageBubble.tsx` renderiza la respuesta con
   `react-markdown` + `remark-gfm` — antes el `**negrita**` que el modelo ya
   emitía se veía como texto crudo con asteriscos.
+- **Respuestas sin el desarrollo del cálculo**: el asistente narraba su propio
+  procedimiento interno ("1. Listado de insumos...", "2. Cálculo: 200 ×
+  464.167 = ...") en vez de ir directo al resultado. `engine/prompts.py`
+  separa ahora el procedimiento (interno, reglas 4/6/7/8) de la respuesta
+  visible (FORMATO DE RESPUESTA): exige ir al resultado y usar una tabla
+  markdown cuando hay más de un insumo o talle involucrado, en vez de
+  párrafos o listas de pasos. La tabla del chat también se prolijó (header
+  con fondo distinto al body).
 
 ## Decisiones de diseño que vale la pena recordar
 
@@ -115,6 +123,15 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
   `CHAT_MODEL = "gpt-4o"` en `engine/config.py` (un modelo más grande, más
   caro) antes de invertir más tiempo en prompt engineering — puede ser un
   techo del modelo chico, no del prompt.
+- **Riesgo adicional visto en el flujo de curva de talles** (mismo origen:
+  límite del modelo chico, no bug de código): en un intento, el modelo aplicó
+  la curva normal sin preguntar primero (saltea la regla 8) y calculó mal —
+  multiplicó el % de la curva directo por la cantidad total de pares y lo
+  etiquetó como gramos, sin aplicar el consumo real por talle (g/par). Además,
+  la respuesta completa de 17 talles en dos tablas puede acercarse al límite
+  de `MAX_TOKENS = 800` (`engine/config.py`) y cortarse a mitad de la tabla
+  final. Si esto se repite en pruebas, subir `MAX_TOKENS` (ej. a 1500) es la
+  corrección más simple antes de tocar el prompt de nuevo.
 - Vercel: confirmar que el deploy productivo funciona de punta a punta con
   el fix de `vercel.json` (se corrigió el error, falta la confirmación en
   producción con `OPENAI_API_KEY` cargada ahí).

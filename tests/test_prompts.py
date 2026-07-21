@@ -28,6 +28,17 @@ def test_system_prompt_pregunta_antes_de_asumir_curva_o_talle():
     assert "esperá la respuesta del usuario" in sp
 
 
+def test_system_prompt_no_expone_el_calculo_y_pide_tablas():
+    """La respuesta visible no debe narrar el procedimiento interno (pasos,
+    cuentas) ni un párrafo cuando hay varios insumos/talles: tiene que ir
+    directo al resultado en una tabla (bug real: el modelo mostraba "1.
+    Listado de insumos...", "2. Cálculo: 200 × 464.167 = ...")."""
+    sp = prompts.SYSTEM_PROMPT
+    assert "NUNCA lo muestres en la respuesta" in sp
+    assert "tabla markdown" in sp
+    assert "no el desarrollo de la cuenta" in sp
+
+
 def test_user_prompt_combina_contexto_y_pregunta():
     up = prompts.build_user_prompt("¿Cuál es el lead time?", "CTX-DE-PRUEBA")
     assert "CTX-DE-PRUEBA" in up
