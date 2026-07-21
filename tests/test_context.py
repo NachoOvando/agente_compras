@@ -13,6 +13,7 @@ def datos_de_prueba(tmp_path, monkeypatch):
     bom_path = tmp_path / "bom.json"
     stock_path = tmp_path / "stock.json"
     politicas_path = tmp_path / "politicas.json"
+    curva_path = tmp_path / "curva_talles.json"
 
     bom = [
         {"codigo": "INS-001", "insumo": "Puntera de acero", "unidad": "par",
@@ -33,20 +34,25 @@ def datos_de_prueba(tmp_path, monkeypatch):
          "stock_seguridad": 100, "rop": 400, "stock_maximo": 900,
          "cobertura_ss_dias": 3.5},
     ]
+    curva = {"talles": {"34": 10.0, "40": 50.0, "50": 40.0}}
     bom_path.write_text(json.dumps(bom), encoding="utf-8")
     stock_path.write_text(json.dumps(stock), encoding="utf-8")
     politicas_path.write_text(json.dumps(politicas), encoding="utf-8")
+    curva_path.write_text(json.dumps(curva), encoding="utf-8")
 
     monkeypatch.setattr(config, "BOM_JSON_PATH", bom_path)
     monkeypatch.setattr(config, "STOCK_JSON_PATH", stock_path)
     monkeypatch.setattr(config, "POLITICAS_JSON_PATH", politicas_path)
+    monkeypatch.setattr(config, "CURVA_TALLES_JSON_PATH", curva_path)
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
     context.load_politicas.cache_clear()
+    context.load_curva_talles.cache_clear()
     yield
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
     context.load_politicas.cache_clear()
+    context.load_curva_talles.cache_clear()
 
 
 def test_load_stock_sin_overrides_devuelve_archivo():
@@ -79,10 +85,30 @@ def test_politicas_faltante_da_error_claro(monkeypatch, tmp_path):
         context.load_politicas()
 
 
-def test_build_context_incluye_las_cuatro_fuentes():
+def test_load_curva_talles_devuelve_archivo():
+    curva = context.load_curva_talles()
+    assert curva["40"] == 50.0
+
+
+def test_curva_talles_faltante_da_error_claro(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "CURVA_TALLES_JSON_PATH", tmp_path / "no_existe.json")
+    context.load_curva_talles.cache_clear()
+    with pytest.raises(FileNotFoundError, match="curva_talles"):
+        context.load_curva_talles()
+
+
+def test_format_curva_talles_marca_que_es_placeholder():
+    out = context.format_curva_talles({"34": 10.0, "40": 50.0})
+    assert "PLACEHOLDER" in out
+    assert "T34=10.0%" in out
+    assert "T40=50.0%" in out
+
+
+def test_build_context_incluye_las_cinco_fuentes():
     retrieved = [{"index": 0, "score": 0.9, "chunk": "Ficha de la puntera de acero"}]
     ctx = context.build_context(
-        retrieved, context.load_bom(), context.load_stock(), context.load_politicas()
+        retrieved, context.load_bom(), context.load_stock(), context.load_politicas(),
+        context.load_curva_talles(),
     )
     assert "Ficha de la puntera de acero" in ctx
     assert "INS-001 | Puntera de acero | par | 1.0 | SI" in ctx
@@ -92,6 +118,8 @@ def test_build_context_incluye_las_cuatro_fuentes():
     assert "STOCK ACTUAL" in ctx
     assert "POLÍTICAS DE INVENTARIO" in ctx
     assert "400" in ctx  # ROP de la política de prueba
+    assert "CURVA NORMAL DE TALLES" in ctx
+    assert "T40=50.0%" in ctx
 
 
 def test_bom_faltante_da_error_claro(monkeypatch, tmp_path):

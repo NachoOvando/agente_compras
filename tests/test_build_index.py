@@ -14,9 +14,12 @@ from scripts import build_index
 
 
 @pytest.fixture(autouse=True)
-def talles_chicos(monkeypatch):
-    """Reduce el rango de talles a 3 para que los DataFrames de prueba sean chicos."""
+def talles_chicos(monkeypatch, tmp_path):
+    """Reduce el rango de talles a 3 (DataFrames de prueba chicos) y redirige
+    BOM_JSON_PATH a un archivo temporal — si no, build_bom_json() pisa el
+    data/index/bom.json real del proyecto con datos sintéticos de test."""
     monkeypatch.setattr(config, "TALLES", ["34", "35", "36"])
+    monkeypatch.setattr(config, "BOM_JSON_PATH", tmp_path / "bom.json")
 
 
 def _fila(talla: str, componente: str, cantidad: float, um: str, tipo: str) -> dict:

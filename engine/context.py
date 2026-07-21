@@ -40,6 +40,21 @@ def load_politicas() -> list[dict]:
 
 
 @lru_cache(maxsize=1)
+def load_curva_talles() -> dict:
+    """Distribución típica de producción por talle (% que suma ~100), para
+    poder desglosar una cantidad total de pares cuando el usuario no da un
+    talle puntual. JSON versionado a mano en data/source/ (mismo tratamiento
+    que stock.json — no pasa por scripts/build_index.py)."""
+    if not config.CURVA_TALLES_JSON_PATH.exists():
+        raise FileNotFoundError(
+            "No se encontró data/source/curva_talles.json. Creá el archivo a "
+            "mano (ver docs/customization.md)."
+        )
+    with open(config.CURVA_TALLES_JSON_PATH, encoding="utf-8") as f:
+        return json.load(f)["talles"]
+
+
+@lru_cache(maxsize=1)
 def _load_stock_file() -> dict:
     if not config.STOCK_JSON_PATH.exists():
         raise FileNotFoundError(
@@ -126,6 +141,17 @@ def format_politicas(politicas: list[dict]) -> str:
     return "\n".join(lineas)
 
 
+def format_curva_talles(curva: dict) -> str:
+    """Distribución de talles como texto plano, con la advertencia de que es
+    un dato de ejemplo hasta que se cargue la curva real de la empresa."""
+    lineas = [
+        "Distribución típica de producción por talle (% de pares por talle, "
+        "PLACEHOLDER — dato de ejemplo, todavía no es la curva real):",
+        " ".join(f"T{t}={pct}%" for t, pct in curva.items()),
+    ]
+    return "\n".join(lineas)
+
+
 def format_stock(stock: dict) -> str:
     """Stock actual como bloque de texto plano para el contexto del LLM."""
     lineas = [
@@ -147,9 +173,11 @@ def format_stock(stock: dict) -> str:
 
 
 def build_context(
-    retrieved: list[dict], bom: list[dict], stock: dict, politicas: list[dict]
+    retrieved: list[dict], bom: list[dict], stock: dict, politicas: list[dict],
+    curva_talles: dict,
 ) -> str:
-    """Concatena fichas recuperadas + BOM + stock + políticas en un único contexto."""
+    """Concatena fichas recuperadas + BOM + stock + políticas + curva de talles
+    en un único contexto."""
     fichas = "\n\n".join(res["chunk"] for res in retrieved)
     return (
         "=== FICHAS DE PROVEEDORES (fragmentos recuperados) ===\n"
@@ -159,5 +187,7 @@ def build_context(
         "=== STOCK ACTUAL ===\n"
         f"{format_stock(stock)}\n\n"
         "=== POLÍTICAS DE INVENTARIO ===\n"
-        f"{format_politicas(politicas)}"
+        f"{format_politicas(politicas)}\n\n"
+        "=== CURVA NORMAL DE TALLES ===\n"
+        f"{format_curva_talles(curva_talles)}"
     )

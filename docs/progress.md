@@ -33,7 +33,7 @@ Puntera de acero, Caja de empaque. *No* son cuero vacuno / suela / puntera
 como asumía la spec original — ese set salió del análisis real de políticas
 de inventario de la tesis, no de la ficha de ejemplo inicial.
 
-Verificado end-to-end (tests automatizados + LLM real + navegador): 57/57
+Verificado end-to-end (tests automatizados + LLM real + navegador): 62/62
 tests, lint y typecheck en verde, deploy a Vercel sin errores.
 
 ## Funcionalidades implementadas
@@ -62,6 +62,17 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
   Plus Jakarta Sans, íconos Phosphor, accesibilidad AA).
 - **CLI** (`python -m engine.cli demo` / modo interactivo) para probar sin
   levantar la web — útil para la defensa.
+- **Curva normal de talles**: si preguntan por una cantidad total de pares
+  sin desglose por talle (ej. "¿alcanza el stock para 5000 pares?"), el
+  asistente **pregunta primero** si aplica la curva normal de talles o si el
+  usuario prefiere un talle puntual — nunca promedia ni asume (bug real que
+  motivó esto: el LLM había inventado "un promedio de talles" para responder
+  una orden grande, con un total que ni siquiera cerraba con el detalle).
+  `data/source/curva_talles.json` es **placeholder** (campana de ejemplo
+  T41-T42), falta la curva real.
+- **Markdown en el chat**: `MessageBubble.tsx` renderiza la respuesta con
+  `react-markdown` + `remark-gfm` — antes el `**negrita**` que el modelo ya
+  emitía se veía como texto crudo con asteriscos.
 
 ## Decisiones de diseño que vale la pena recordar
 
@@ -90,6 +101,20 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
 - `stock_actual` en `stock.json` sigue siendo un valor de ejemplo — falta
   reemplazarlo por una fuente real (manual o integración con ERP/logística),
   tal como está planteado desde la spec original.
+- `curva_talles.json` es de ejemplo — falta la distribución real de
+  producción/ventas por talle de la empresa.
+- **Limitación conocida de `gpt-4o-mini`** (no es un bug de código): en
+  preguntas de suficiencia que deberían evaluar los 3 insumos críticos a la
+  vez, a veces el modelo solo enumera 1 o 2 en vez de los 3 (verificado con
+  llamadas reales, reproducible en ~1 de cada 3 intentos pese a un prompt
+  explícito paso a paso). **Lo que sí quedó 100% resuelto y confirmado 3/3**:
+  el bug original (promediar/inventar un talle en vez de preguntar) — cuando
+  la pregunta involucra específicamente el insumo variable por talle, el
+  asistente nunca promedia; pregunta o dice que no tiene el dato. Si la
+  confiabilidad en preguntas multi-insumo importa para la defensa, probar
+  `CHAT_MODEL = "gpt-4o"` en `engine/config.py` (un modelo más grande, más
+  caro) antes de invertir más tiempo en prompt engineering — puede ser un
+  techo del modelo chico, no del prompt.
 - Vercel: confirmar que el deploy productivo funciona de punta a punta con
   el fix de `vercel.json` (se corrigió el error, falta la confirmación en
   producción con `OPENAI_API_KEY` cargada ahí).

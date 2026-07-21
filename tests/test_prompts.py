@@ -19,6 +19,15 @@ def test_system_prompt_aclara_que_bom_cubre_insumos_no_criticos():
     assert "TODOS los insumos" in sp
 
 
+def test_system_prompt_pregunta_antes_de_asumir_curva_o_talle():
+    """No debe promediar/asumir talle: tiene que preguntar curva normal vs.
+    talle puntual antes de calcular (bug real visto con un LLM en producción)."""
+    sp = prompts.SYSTEM_PROMPT
+    assert "curva normal" in sp
+    assert "talle puntual" in sp
+    assert "esperá la respuesta del usuario" in sp
+
+
 def test_user_prompt_combina_contexto_y_pregunta():
     up = prompts.build_user_prompt("¿Cuál es el lead time?", "CTX-DE-PRUEBA")
     assert "CTX-DE-PRUEBA" in up

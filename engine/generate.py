@@ -31,11 +31,12 @@ def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
         np.asarray(question_embedding), chunks, chunk_embeddings, k=k
     )
 
-    # AUGMENT: fichas recuperadas + BOM + stock actual + políticas (datos exactos)
+    # AUGMENT: fichas recuperadas + BOM + stock + políticas + curva de talles
     bom = context.load_bom()
     stock = context.load_stock(stock_overrides)
     politicas = context.load_politicas()
-    full_context = context.build_context(retrieved, bom, stock, politicas)
+    curva_talles = context.load_curva_talles()
+    full_context = context.build_context(retrieved, bom, stock, politicas, curva_talles)
 
     # GENERATE
     messages = [{"role": "system", "content": prompts.SYSTEM_PROMPT}]

@@ -47,6 +47,7 @@ def entorno_de_prueba(tmp_path, monkeypatch):
     bom_path = tmp_path / "bom.json"
     stock_path = tmp_path / "stock.json"
     politicas_path = tmp_path / "politicas.json"
+    curva_path = tmp_path / "curva_talles.json"
     bom_path.write_text(json.dumps([
         {"codigo": "INS-001", "insumo": "Puntera de acero", "unidad": "par",
          "consumo_por_unidad": 1.0, "critico": True},
@@ -65,12 +66,17 @@ def entorno_de_prueba(tmp_path, monkeypatch):
          "stock_seguridad": 100, "rop": 400, "stock_maximo": 900,
          "cobertura_ss_dias": 3.5},
     ]), encoding="utf-8")
+    curva_path.write_text(json.dumps({
+        "talles": {"34": 0.5, "40": 13.0, "50": 0.1},
+    }), encoding="utf-8")
     monkeypatch.setattr(config, "BOM_JSON_PATH", bom_path)
     monkeypatch.setattr(config, "STOCK_JSON_PATH", stock_path)
     monkeypatch.setattr(config, "POLITICAS_JSON_PATH", politicas_path)
+    monkeypatch.setattr(config, "CURVA_TALLES_JSON_PATH", curva_path)
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
     context.load_politicas.cache_clear()
+    context.load_curva_talles.cache_clear()
 
     # Índice fake: 3 chunks con embeddings ortogonales
     chunks = ("ficha de la puntera de acero", "ficha del sistema PU", "ficha de la caja de empaque")
@@ -85,6 +91,7 @@ def entorno_de_prueba(tmp_path, monkeypatch):
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
     context.load_politicas.cache_clear()
+    context.load_curva_talles.cache_clear()
 
 
 def test_rag_answer_devuelve_answer_y_sources():
@@ -148,6 +155,17 @@ def test_rag_answer_incluye_detalle_por_talle_en_el_contexto():
     user_prompt = client.chat_calls[0]["messages"][1]["content"]
     assert "DETALLE POR TALLE" in user_prompt
     assert "T40=478.167" in user_prompt
+
+
+def test_rag_answer_incluye_curva_de_talles_en_el_contexto():
+    """Confirma que la curva de talles llega al contexto. No prueba que el
+    modelo pregunte antes de calcular (eso se verifica a mano, ver
+    docs/customization.md)."""
+    client = FakeClient()
+    generate.rag_answer("¿alcanza el stock para producir 5000 pares?", client=client)
+    user_prompt = client.chat_calls[0]["messages"][1]["content"]
+    assert "CURVA NORMAL DE TALLES" in user_prompt
+    assert "T40=13.0%" in user_prompt
 
 
 def test_rag_answer_incluye_politicas_de_inventario_en_el_contexto():
