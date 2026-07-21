@@ -73,6 +73,10 @@ def entorno_de_prueba(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "STOCK_JSON_PATH", stock_path)
     monkeypatch.setattr(config, "POLITICAS_JSON_PATH", politicas_path)
     monkeypatch.setattr(config, "CURVA_TALLES_JSON_PATH", curva_path)
+    # El consumo por talle y la curva de la fixture solo cubren 3 talles;
+    # compute_consumo_ponderado_curva itera config.TALLES, así que hay que
+    # acotarlo para que no busque los otros 14 (KeyError).
+    monkeypatch.setattr(config, "TALLES", ["34", "40", "50"])
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
     context.load_politicas.cache_clear()
@@ -166,6 +170,7 @@ def test_rag_answer_incluye_curva_de_talles_en_el_contexto():
     user_prompt = client.chat_calls[0]["messages"][1]["content"]
     assert "CURVA NORMAL DE TALLES" in user_prompt
     assert "T40=13.0%" in user_prompt
+    assert "CONSUMO PONDERADO" in user_prompt  # precalculado, no lo suma el LLM
 
 
 def test_rag_answer_incluye_politicas_de_inventario_en_el_contexto():

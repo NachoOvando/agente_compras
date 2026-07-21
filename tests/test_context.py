@@ -72,6 +72,23 @@ def test_override_de_codigo_inexistente_se_ignora():
     assert stock["items"][0]["stock_actual"] == 150
 
 
+def test_format_stock_marca_si_esta_bajo_minimo():
+    stock = {
+        "fecha_actualizacion": "2026-07-12",
+        "items": [
+            {"codigo": "INS-001", "insumo": "Puntera de acero", "unidad": "par",
+             "stock_actual": 150, "stock_minimo": 400},
+            {"codigo": "INS-002", "insumo": "Caja de empaque", "unidad": "unidad",
+             "stock_actual": 900, "stock_minimo": 400},
+        ],
+    }
+    out = context.format_stock(stock)
+    assert "Puntera de acero" in out.split("Caja de empaque")[0]
+    puntera, caja = out.split("Caja de empaque")
+    assert "¿por debajo del mínimo? SÍ" in puntera
+    assert "¿por debajo del mínimo? NO" in caja
+
+
 def test_load_politicas_devuelve_archivo():
     politicas = context.load_politicas()
     assert politicas[0]["insumo"] == "Puntera de acero"
@@ -98,10 +115,37 @@ def test_curva_talles_faltante_da_error_claro(monkeypatch, tmp_path):
 
 
 def test_format_curva_talles_marca_que_es_placeholder():
-    out = context.format_curva_talles({"34": 10.0, "40": 50.0})
+    out = context.format_curva_talles({"34": 10.0, "40": 50.0}, [])
     assert "PLACEHOLDER" in out
     assert "T34=10.0%" in out
     assert "T40=50.0%" in out
+
+
+def test_format_curva_talles_incluye_consumo_ponderado():
+    ponderado = [{"codigo": "INS-002", "insumo": "Conjunto Sistema PU",
+                  "unidad": "g", "consumo_ponderado_por_par": 430.0}]
+    out = context.format_curva_talles({"34": 10.0, "40": 50.0, "50": 40.0}, ponderado)
+    assert "CONSUMO PONDERADO" in out
+    assert "Conjunto Sistema PU: 430.0 g/par" in out
+
+
+def test_compute_consumo_ponderado_curva_pondera_por_par(monkeypatch):
+    """No depende de la cantidad de pares — es un promedio ponderado por los
+    % de la curva, precalculado en Python para que el LLM no tenga que
+    repartir y sumar 17 términos (bug real: lo hacía mal)."""
+    monkeypatch.setattr(config, "TALLES", ["34", "40", "50"])
+    bom = [
+        {"codigo": "INS-002", "insumo": "Conjunto Sistema PU", "unidad": "g",
+         "consumo_por_unidad": None, "critico": True,
+         "consumo_por_talle": {"34": 300.0, "40": 400.0, "50": 500.0}},
+        {"codigo": "INS-001", "insumo": "Puntera de acero", "unidad": "par",
+         "consumo_por_unidad": 1.0, "critico": True},
+    ]
+    curva = {"34": 10.0, "40": 50.0, "50": 40.0}
+    ponderado = context.compute_consumo_ponderado_curva(bom, curva)
+    assert len(ponderado) == 1  # solo el insumo variable por talle
+    assert ponderado[0]["insumo"] == "Conjunto Sistema PU"
+    assert ponderado[0]["consumo_ponderado_por_par"] == pytest.approx(430.0)
 
 
 def test_build_context_incluye_las_cinco_fuentes():

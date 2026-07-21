@@ -81,6 +81,24 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
   markdown cuando hay más de un insumo o talle involucrado, en vez de
   párrafos o listas de pasos. La tabla del chat también se prolijó (header
   con fondo distinto al body).
+- **Cálculos deterministas en Python en vez de aritmética del LLM**: al
+  aplicar la curva normal de talles, el modelo tenía que sumar 17 términos
+  (cantidad por talle × consumo por talle) y lo hacía mal de forma
+  sistemática (multiplicaba el % de la curva directo por la cantidad total y
+  lo etiquetaba como el resultado, sin aplicar el consumo real por talle).
+  `engine/context.py:compute_consumo_ponderado_curva()` precalcula en Python
+  el consumo ponderado por par de cada insumo variable por talle (no depende
+  de la cantidad que pida el usuario, solo de `bom.json` + `curva_talles.json`,
+  ya cargados) — el modelo pasa a necesitar una sola multiplicación
+  (`N × consumo_ponderado`), verificado 4/4 con el valor exacto. De paso,
+  `format_stock()` agrega un flag `¿por debajo del mínimo? SÍ/NO` precalculado
+  por insumo, para que la pregunta de prioridad no dependa de que el modelo
+  compare bien los 3 stocks en prosa. Al agregar el consumo ponderado al
+  contexto apareció un efecto secundario (el modelo a veces mezclaba ese
+  número con el de un talle puntual, dando un híbrido tipo "464.337" en vez
+  de "464.167") — se resolvió aclarando en la regla 7 que el talle puntual
+  usa exclusivamente DETALLE POR TALLE, nunca el consumo ponderado
+  (verificado 6/6 después del ajuste).
 
 ## Decisiones de diseño que vale la pena recordar
 
@@ -123,15 +141,10 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
   `CHAT_MODEL = "gpt-4o"` en `engine/config.py` (un modelo más grande, más
   caro) antes de invertir más tiempo en prompt engineering — puede ser un
   techo del modelo chico, no del prompt.
-- **Riesgo adicional visto en el flujo de curva de talles** (mismo origen:
-  límite del modelo chico, no bug de código): en un intento, el modelo aplicó
-  la curva normal sin preguntar primero (saltea la regla 8) y calculó mal —
-  multiplicó el % de la curva directo por la cantidad total de pares y lo
-  etiquetó como gramos, sin aplicar el consumo real por talle (g/par). Además,
-  la respuesta completa de 17 talles en dos tablas puede acercarse al límite
-  de `MAX_TOKENS = 800` (`engine/config.py`) y cortarse a mitad de la tabla
-  final. Si esto se repite en pruebas, subir `MAX_TOKENS` (ej. a 1500) es la
-  corrección más simple antes de tocar el prompt de nuevo.
+- **Resuelto**: el error de cálculo en el flujo de curva de talles (ver
+  "Cálculos deterministas en Python" arriba) — ya no depende de que el LLM
+  sume 17 términos. `MAX_TOKENS` también se subió de 800 a 1500 por las dudas
+  (una respuesta de curva con desglose podía acercarse al límite).
 - Vercel: confirmar que el deploy productivo funciona de punta a punta con
   el fix de `vercel.json` (se corrigió el error, falta la confirmación en
   producción con `OPENAI_API_KEY` cargada ahí).

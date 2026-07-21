@@ -39,6 +39,17 @@ def test_system_prompt_no_expone_el_calculo_y_pide_tablas():
     assert "no el desarrollo de la cuenta" in sp
 
 
+def test_system_prompt_usa_consumo_ponderado_en_vez_de_sumar_por_talle():
+    """Bug real: al aplicar la curva normal, el modelo sumaba mal 17 términos
+    (multiplicaba el % directo por la cantidad de pares y lo llamaba el
+    resultado, sin aplicar el consumo real por talle). Ahora el prompt tiene
+    que usar el consumo ponderado ya calculado en Python (una multiplicación,
+    no una suma de 17 términos)."""
+    sp = prompts.SYSTEM_PROMPT
+    assert "CONSUMO PONDERADO" in sp
+    assert "NUNCA repartas la cantidad por talle ni sumes 17 términos" in sp
+
+
 def test_user_prompt_combina_contexto_y_pregunta():
     up = prompts.build_user_prompt("¿Cuál es el lead time?", "CTX-DE-PRUEBA")
     assert "CTX-DE-PRUEBA" in up

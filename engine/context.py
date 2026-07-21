@@ -141,14 +141,53 @@ def format_politicas(politicas: list[dict]) -> str:
     return "\n".join(lineas)
 
 
-def format_curva_talles(curva: dict) -> str:
+def compute_consumo_ponderado_curva(bom: list[dict], curva_talles: dict) -> list[dict]:
+    """Consumo por par ponderado por la curva normal de talles, precalculado
+    en Python para cada insumo variable por talle (no depende de la cantidad
+    de pares que pida el usuario — solo de datos ya cargados). Evita que el
+    LLM tenga que repartir y sumar 17 términos: el modelo solo multiplica
+    cantidad_total × este valor. Los % de la curva ya suman 100, así que la
+    suma ponderada es directamente el promedio."""
+    ponderado = []
+    for fila in bom:
+        consumo_por_talle = fila.get("consumo_por_talle")
+        if not consumo_por_talle:
+            continue
+        valor = sum(
+            consumo_por_talle[t] * curva_talles[t] / 100 for t in config.TALLES
+        )
+        ponderado.append({
+            "codigo": fila["codigo"],
+            "insumo": fila["insumo"],
+            "unidad": fila["unidad"],
+            "consumo_ponderado_por_par": round(valor, 3),
+        })
+    return ponderado
+
+
+def format_curva_talles(curva: dict, ponderado: list[dict]) -> str:
     """Distribución de talles como texto plano, con la advertencia de que es
-    un dato de ejemplo hasta que se cargue la curva real de la empresa."""
+    un dato de ejemplo hasta que se cargue la curva real de la empresa. Suma
+    el consumo ponderado ya calculado (ver compute_consumo_ponderado_curva)
+    para que el LLM no tenga que repartir/sumar por talle."""
     lineas = [
         "Distribución típica de producción por talle (% de pares por talle, "
         "PLACEHOLDER — dato de ejemplo, todavía no es la curva real):",
         " ".join(f"T{t}={pct}%" for t, pct in curva.items()),
     ]
+    if ponderado:
+        lineas.append("")
+        lineas.append(
+            "CONSUMO PONDERADO SEGÚN LA CURVA NORMAL (ya calculado — para una "
+            "cantidad total de N pares sin desglose de talle, la necesidad de "
+            "estos insumos es N × este valor; no hace falta repartir ni sumar "
+            "por talle):"
+        )
+        for fila in ponderado:
+            lineas.append(
+                f"{fila['codigo']} | {fila['insumo']}: "
+                f"{fila['consumo_ponderado_por_par']} {fila['unidad']}/par"
+            )
     return "\n".join(lineas)
 
 
@@ -158,10 +197,12 @@ def format_stock(stock: dict) -> str:
         f"STOCK ACTUAL de insumos críticos (fecha: {stock['fecha_actualizacion']}):",
     ]
     for item in stock["items"]:
+        bajo_minimo = item["stock_actual"] < item["stock_minimo"]
         lineas.append(
             f"- {item['insumo']} ({item['codigo']}): stock actual "
             f"{item['stock_actual']} {item['unidad']}, stock mínimo "
-            f"{item['stock_minimo']} {item['unidad']}"
+            f"{item['stock_minimo']} {item['unidad']}, ¿por debajo del "
+            f"mínimo? {'SÍ' if bajo_minimo else 'NO'}"
         )
     lineas.append("")
     lineas.append(
@@ -179,6 +220,7 @@ def build_context(
     """Concatena fichas recuperadas + BOM + stock + políticas + curva de talles
     en un único contexto."""
     fichas = "\n\n".join(res["chunk"] for res in retrieved)
+    ponderado = compute_consumo_ponderado_curva(bom, curva_talles)
     return (
         "=== FICHAS DE PROVEEDORES (fragmentos recuperados) ===\n"
         f"{fichas}\n\n"
@@ -189,5 +231,5 @@ def build_context(
         "=== POLÍTICAS DE INVENTARIO ===\n"
         f"{format_politicas(politicas)}\n\n"
         "=== CURVA NORMAL DE TALLES ===\n"
-        f"{format_curva_talles(curva_talles)}"
+        f"{format_curva_talles(curva_talles, ponderado)}"
     )
