@@ -26,7 +26,7 @@ engine/          motor RAG (lógica de negocio, testeable sin servidor)
 api/index.py     FastAPI — solo routing, delega a engine/
 shared/          app-config.json: producto y preguntas demo (fuente única Python+TS)
 scripts/         build_index.py — único script: indexa fichas, BOM (export SAP) y políticas
-data/source/     cerco de información: Cerco_informacion.pdf, BOM _ CRONOS-N04.xlsx (SAP), stock.json, politicas_inventario.xlsx (reales) + curva_talles.json (PLACEHOLDER)
+data/source/     cerco de información: Cerco_informacion.pdf, BOM _ CRONOS-N04.xlsx (SAP), stock.json, politicas_inventario.xlsx, contexto_negocio.md (reales) + curva_talles.json (PLACEHOLDER)
 data/index/      índice generado (chunks/embeddings/bom.json/politicas.json) — no editar a mano
 src/             frontend Next.js: src/app/, src/components/, src/lib/
 tests/           pytest del motor
@@ -40,7 +40,8 @@ docs/            architecture.md, api-reference.md, deployment.md, customization
 - **Nombre del producto / preguntas de ejemplo**: `shared/app-config.json` (fuente única para Python y frontend — no editar en `engine/config.py` ni en componentes).
 - **System prompt / reglas del cerco**: `engine/prompts.py`.
 - **Modelos, TOP_K, temperature, chunk size**: `engine/config.py`.
-- **Armado de contexto (BOM + stock + fichas + políticas + curva de talles)**: `engine/context.py`.
+- **Armado de contexto (BOM + stock + fichas + políticas + curva de talles + contexto de negocio)**: `engine/context.py`.
+- **Cálculo de necesidad de insumos (talle puntual o curva normal)**: `engine/tools.py` — function calling de OpenAI, el LLM nunca hace la cuenta, solo redacta el resultado exacto que devuelve Python.
 - **Insumos críticos actuales**: Conjunto Sistema PU — consumo variable por talle (T34–T50), fusión de 4 componentes SAP —, Puntera de acero y Caja de empaque. Mapeo SAP→insumo en `CRITICOS_SAP_A_INSUMO` (BOM) y `FAMILIA_A_INSUMO` (políticas), ambos en `scripts/build_index.py`.
 - **Búsqueda semántica**: `engine/retrieval.py`.
 - Cambiar el PDF, la BOM o `CHUNK_SIZE`/modelo de embeddings requiere re-indexar: `python scripts/build_index.py`.
@@ -84,7 +85,17 @@ En particular `SPEC_asistente_compras.md` (brief completo) y
 - **Pendiente**: `data/source/curva_talles.json` (distribución de producción
   por talle) es un placeholder de ejemplo — falta la curva real de la empresa.
   Cuando el usuario pide una cantidad de pares sin desglose por talle, el
-  asistente pregunta si aplicar la curva normal o un talle puntual (regla 8
+  asistente pregunta si aplicar la curva normal o un talle puntual (regla 6
   de `engine/prompts.py`) antes de calcular, en vez de promediar.
 - Chat con render de markdown (`react-markdown` + `remark-gfm` en
   `MessageBubble.tsx`) — el modelo ya devolvía negrita/listas, ahora se ven.
+- **Cálculo de necesidad de insumos vía function calling** (`engine/tools.py`):
+  el LLM extrae cantidad/talle/curva de la pregunta pero la aritmética la
+  hace Python — corrige un bug real en producción donde el modelo reutilizaba
+  un total ya calculado de un turno anterior y lo volvía a multiplicar
+  (1000 pares → total → "× 1000" otra vez).
+- **Contexto de negocio** (`data/source/contexto_negocio.md`, sin nombre de la
+  empresa): metodología de criticidad de insumos (K-Means sobre volumen
+  relativo + alcance productivo), curva de ventas por talle, y qué insumos
+  quedan fuera de este sistema y por qué (ej. cordones/ojalillos → gestión
+  reactiva, no predictiva) — se inyecta siempre en el contexto.

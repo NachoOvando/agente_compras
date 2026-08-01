@@ -14,6 +14,7 @@ def datos_de_prueba(tmp_path, monkeypatch):
     stock_path = tmp_path / "stock.json"
     politicas_path = tmp_path / "politicas.json"
     curva_path = tmp_path / "curva_talles.json"
+    contexto_negocio_path = tmp_path / "contexto_negocio.md"
 
     bom = [
         {"codigo": "INS-001", "insumo": "Puntera de acero", "unidad": "par",
@@ -39,20 +40,24 @@ def datos_de_prueba(tmp_path, monkeypatch):
     stock_path.write_text(json.dumps(stock), encoding="utf-8")
     politicas_path.write_text(json.dumps(politicas), encoding="utf-8")
     curva_path.write_text(json.dumps(curva), encoding="utf-8")
+    contexto_negocio_path.write_text("Contexto de negocio de prueba.", encoding="utf-8")
 
     monkeypatch.setattr(config, "BOM_JSON_PATH", bom_path)
     monkeypatch.setattr(config, "STOCK_JSON_PATH", stock_path)
     monkeypatch.setattr(config, "POLITICAS_JSON_PATH", politicas_path)
     monkeypatch.setattr(config, "CURVA_TALLES_JSON_PATH", curva_path)
+    monkeypatch.setattr(config, "CONTEXTO_NEGOCIO_PATH", contexto_negocio_path)
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
     context.load_politicas.cache_clear()
     context.load_curva_talles.cache_clear()
+    context.load_contexto_negocio.cache_clear()
     yield
     context.load_bom.cache_clear()
     context._load_stock_file.cache_clear()
     context.load_politicas.cache_clear()
     context.load_curva_talles.cache_clear()
+    context.load_contexto_negocio.cache_clear()
 
 
 def test_load_stock_sin_overrides_devuelve_archivo():
@@ -115,24 +120,17 @@ def test_curva_talles_faltante_da_error_claro(monkeypatch, tmp_path):
 
 
 def test_format_curva_talles_marca_que_es_placeholder():
-    out = context.format_curva_talles({"34": 10.0, "40": 50.0}, [])
+    out = context.format_curva_talles({"34": 10.0, "40": 50.0})
     assert "PLACEHOLDER" in out
     assert "T34=10.0%" in out
     assert "T40=50.0%" in out
 
 
-def test_format_curva_talles_incluye_consumo_ponderado():
-    ponderado = [{"codigo": "INS-002", "insumo": "Conjunto Sistema PU",
-                  "unidad": "g", "consumo_ponderado_por_par": 430.0}]
-    out = context.format_curva_talles({"34": 10.0, "40": 50.0, "50": 40.0}, ponderado)
-    assert "CONSUMO PONDERADO" in out
-    assert "Conjunto Sistema PU: 430.0 g/par" in out
-
-
 def test_compute_consumo_ponderado_curva_pondera_por_par(monkeypatch):
     """No depende de la cantidad de pares — es un promedio ponderado por los
-    % de la curva, precalculado en Python para que el LLM no tenga que
-    repartir y sumar 17 términos (bug real: lo hacía mal)."""
+    % de la curva. Usado por engine/tools.py (no por el LLM directamente:
+    dejarlo en el contexto visible causó que el modelo lo confundiera con
+    un talle puntual, ver engine/tools.py)."""
     monkeypatch.setattr(config, "TALLES", ["34", "40", "50"])
     bom = [
         {"codigo": "INS-002", "insumo": "Conjunto Sistema PU", "unidad": "g",
@@ -148,15 +146,28 @@ def test_compute_consumo_ponderado_curva_pondera_por_par(monkeypatch):
     assert ponderado[0]["consumo_ponderado_por_par"] == pytest.approx(430.0)
 
 
-def test_build_context_incluye_las_cinco_fuentes():
+def test_load_contexto_negocio_devuelve_archivo():
+    assert context.load_contexto_negocio() == "Contexto de negocio de prueba."
+
+
+def test_contexto_negocio_faltante_da_error_claro(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "CONTEXTO_NEGOCIO_PATH", tmp_path / "no_existe.md")
+    context.load_contexto_negocio.cache_clear()
+    with pytest.raises(FileNotFoundError, match="contexto_negocio"):
+        context.load_contexto_negocio()
+
+
+def test_build_context_incluye_las_seis_fuentes():
     retrieved = [{"index": 0, "score": 0.9, "chunk": "Ficha de la puntera de acero"}]
     ctx = context.build_context(
         retrieved, context.load_bom(), context.load_stock(), context.load_politicas(),
-        context.load_curva_talles(),
+        context.load_curva_talles(), context.load_contexto_negocio(),
     )
     assert "Ficha de la puntera de acero" in ctx
     assert "INS-001 | Puntera de acero | par | 1.0 | SI" in ctx
     assert "stock actual 150 par" in ctx
+    assert "CONTEXTO DEL NEGOCIO" in ctx
+    assert "Contexto de negocio de prueba." in ctx
     assert "FICHAS DE PROVEEDORES" in ctx
     assert "BOM DEL PRODUCTO" in ctx
     assert "STOCK ACTUAL" in ctx

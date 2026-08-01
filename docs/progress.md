@@ -1,6 +1,6 @@
 # Progreso del proyecto — Asistente de Compras
 
-> Snapshot al **19/07/2026**. Documento de estado para retomar contexto rápido
+> Snapshot al **01/08/2026**. Documento de estado para retomar contexto rápido
 > (propio, para la tesis, o para una sesión nueva de Claude Code). No es un
 > changelog exhaustivo — para eso está `git log`. Para "cómo está armado"
 > ver [architecture.md](architecture.md); para "qué toco para cambiar X" ver
@@ -19,21 +19,23 @@ Vercel.
 
 ## Estado actual: funcional con datos 100% reales
 
-Las 4 fuentes del cerco de información ya no son ficticias:
+Las fuentes del cerco de información, salvo la curva de talles, son reales:
 
 | Fuente | Archivo | Contenido |
 |---|---|---|
-| Fichas de proveedores | `data/source/Cerco_informacion.pdf` | 3 fichas reales (Poliresinas San Luis, Flecksteel, Papel Pack) |
+| Fichas de proveedores | `data/source/Cerco_informacion.pdf` | 3 fichas reales (Poliresinas San Luis, Flecksteel, Papel Pack) — insumo, unidad, proveedor, origen, presentación, contacto. **No** traen lead time, precio ni MOQ |
 | BOM del producto | `data/source/BOM _ CRONOS-N04.xlsx` | Export crudo de SAP (220 filas, 17 talles, columna `Tipo` Critico/No Critico) |
 | Políticas de inventario | `data/source/politicas_inventario.xlsx` | Lead time, demanda, stock de seguridad, ROP reales (análisis de la tesis) |
 | Stock actual | `data/source/stock.json` | `stock_minimo` = ROP real; `stock_actual` es el único dato todavía placeholder (es el input manual/diario por diseño) |
+| Curva normal de talles | `data/source/curva_talles.json` | **PLACEHOLDER** — campana de ejemplo centrada en T42 (talle medio real del negocio), no la distribución real de ventas |
+| Contexto de negocio | `data/source/contexto_negocio.md` | Real (sin nombre de la empresa): metodología de criticidad, curva de ventas por talle, insumos fuera de alcance y por qué |
 
 **Insumos críticos reales**: Conjunto Sistema PU (variable por talle),
 Puntera de acero, Caja de empaque. *No* son cuero vacuno / suela / puntera
 como asumía la spec original — ese set salió del análisis real de políticas
 de inventario de la tesis, no de la ficha de ejemplo inicial.
 
-Verificado end-to-end (tests automatizados + LLM real + navegador): 62/62
+Verificado end-to-end (tests automatizados + LLM real + navegador): 86/86
 tests, lint y typecheck en verde, deploy a Vercel sin errores.
 
 ## Funcionalidades implementadas
@@ -65,40 +67,49 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
 - **Curva normal de talles**: si preguntan por una cantidad total de pares
   sin desglose por talle (ej. "¿alcanza el stock para 5000 pares?"), el
   asistente **pregunta primero** si aplica la curva normal de talles o si el
-  usuario prefiere un talle puntual — nunca promedia ni asume (bug real que
-  motivó esto: el LLM había inventado "un promedio de talles" para responder
-  una orden grande, con un total que ni siquiera cerraba con el detalle).
-  `data/source/curva_talles.json` es **placeholder** (campana de ejemplo
-  T41-T42), falta la curva real.
+  usuario prefiere un talle puntual — nunca promedia ni asume. `data/source/
+  curva_talles.json` es **placeholder** (campana centrada en T42, el talle
+  medio real del negocio), falta la curva real de ventas.
 - **Markdown en el chat**: `MessageBubble.tsx` renderiza la respuesta con
   `react-markdown` + `remark-gfm` — antes el `**negrita**` que el modelo ya
   emitía se veía como texto crudo con asteriscos.
 - **Respuestas sin el desarrollo del cálculo**: el asistente narraba su propio
   procedimiento interno ("1. Listado de insumos...", "2. Cálculo: 200 ×
   464.167 = ...") en vez de ir directo al resultado. `engine/prompts.py`
-  separa ahora el procedimiento (interno, reglas 4/6/7/8) de la respuesta
-  visible (FORMATO DE RESPUESTA): exige ir al resultado y usar una tabla
-  markdown cuando hay más de un insumo o talle involucrado, en vez de
-  párrafos o listas de pasos. La tabla del chat también se prolijó (header
-  con fondo distinto al body).
-- **Cálculos deterministas en Python en vez de aritmética del LLM**: al
-  aplicar la curva normal de talles, el modelo tenía que sumar 17 términos
-  (cantidad por talle × consumo por talle) y lo hacía mal de forma
-  sistemática (multiplicaba el % de la curva directo por la cantidad total y
-  lo etiquetaba como el resultado, sin aplicar el consumo real por talle).
-  `engine/context.py:compute_consumo_ponderado_curva()` precalcula en Python
-  el consumo ponderado por par de cada insumo variable por talle (no depende
-  de la cantidad que pida el usuario, solo de `bom.json` + `curva_talles.json`,
-  ya cargados) — el modelo pasa a necesitar una sola multiplicación
-  (`N × consumo_ponderado`), verificado 4/4 con el valor exacto. De paso,
-  `format_stock()` agrega un flag `¿por debajo del mínimo? SÍ/NO` precalculado
-  por insumo, para que la pregunta de prioridad no dependa de que el modelo
-  compare bien los 3 stocks en prosa. Al agregar el consumo ponderado al
-  contexto apareció un efecto secundario (el modelo a veces mezclaba ese
-  número con el de un talle puntual, dando un híbrido tipo "464.337" en vez
-  de "464.167") — se resolvió aclarando en la regla 7 que el talle puntual
-  usa exclusivamente DETALLE POR TALLE, nunca el consumo ponderado
-  (verificado 6/6 después del ajuste).
+  separa el procedimiento (interno) de la respuesta visible (FORMATO DE
+  RESPUESTA): exige ir al resultado y usar una tabla markdown cuando hay más
+  de un insumo o talle involucrado. La tabla del chat también se prolijó
+  (header con fondo distinto al body).
+- **Function calling: el LLM nunca hace la aritmética** (`engine/tools.py`).
+  Iteración anterior (precalcular el consumo ponderado en el contexto)
+  arregló un bug pero expuso dos más graves en producción, con captura real:
+  (1) al preguntar "con una orden de 1000 pares, ¿alcanza?" (sin talle), el
+  modelo aplicaba la curva normal **sin preguntar** — saltaba el gate porque
+  el número ya estaba servido en el contexto; (2) en el turno siguiente
+  ("para toda la curva de talles?"), el modelo tomó el total YA calculado del
+  turno anterior (497 337 g) y lo volvió a multiplicar por 1000 →
+  **497 337 000 g**, concluyendo "no alcanza" cuando sobraba 20×. Fix: el
+  cálculo se sacó completamente del LLM. `calcular_necesidad_insumos` es una
+  tool de OpenAI (function calling) — el modelo solo extrae cantidad/talle/
+  si-aplica-curva de la pregunta; Python calcula desde `bom.json` +
+  `stock.json` + `curva_talles.json`, siempre desde cero (nunca reutiliza un
+  número de un turno anterior), y si falta talle/curva devuelve
+  `necesita_aclaracion` **sin ningún número** — el "preguntá antes de
+  calcular" pasó de ser una regla de prompt (~70% obedecida) a una garantía
+  de código. Verificado reproduciendo el escenario exacto de la captura 4/4
+  veces (pregunta primero, después calcula 500 023 g — no 500 023 000).
+  `data/index/chunks.json` reveló de paso que las fichas reales **no**
+  traen lead time/precio/MOQ (el prompt se lo prometía al modelo — corregido).
+- **Contexto de negocio** (`data/source/contexto_negocio.md`, prosa libre sin
+  nombre de la empresa): metodología de criticidad de insumos (K-Means K=3
+  sobre volumen relativo + alcance productivo → CRÍTICO/IMPORTANTE/
+  SECUNDARIO), curva de ventas por talle (forecast Prophet desagregado con
+  distribución normal, moda 42, consumo no lineal con el volumen), y qué
+  insumos quedan fuera de este sistema y por qué (semielaborados internos;
+  cordones/ojalillos → gestión reactiva, lead time corto, no seguimiento
+  predictivo). Se inyecta siempre — antes, preguntar por un insumo fuera de
+  alcance daba el genérico "no tengo esa información", ahora explica el
+  motivo real.
 
 ## Decisiones de diseño que vale la pena recordar
 
@@ -131,20 +142,19 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
   producción/ventas por talle de la empresa.
 - **Limitación conocida de `gpt-4o-mini`** (no es un bug de código): en
   preguntas de suficiencia que deberían evaluar los 3 insumos críticos a la
-  vez, a veces el modelo solo enumera 1 o 2 en vez de los 3 (verificado con
-  llamadas reales, reproducible en ~1 de cada 3 intentos pese a un prompt
-  explícito paso a paso). **Lo que sí quedó 100% resuelto y confirmado 3/3**:
-  el bug original (promediar/inventar un talle en vez de preguntar) — cuando
-  la pregunta involucra específicamente el insumo variable por talle, el
-  asistente nunca promedia; pregunta o dice que no tiene el dato. Si la
-  confiabilidad en preguntas multi-insumo importa para la defensa, probar
-  `CHAT_MODEL = "gpt-4o"` en `engine/config.py` (un modelo más grande, más
-  caro) antes de invertir más tiempo en prompt engineering — puede ser un
-  techo del modelo chico, no del prompt.
-- **Resuelto**: el error de cálculo en el flujo de curva de talles (ver
-  "Cálculos deterministas en Python" arriba) — ya no depende de que el LLM
-  sume 17 términos. `MAX_TOKENS` también se subió de 800 a 1500 por las dudas
-  (una respuesta de curva con desglose podía acercarse al límite).
+  vez, el modelo podía enumerar solo 1 o 2 en vez de los 3 (verificado antes
+  del flag `¿por debajo del mínimo?` en `format_stock()`, reproducible en ~1
+  de cada 3 intentos). El flag reduce el riesgo (el modelo ya no *deriva* la
+  comparación, la *lee*) pero la redacción final sigue siendo del LLM — no
+  está garantizado al 100% como el cálculo de `calcular_necesidad_insumos`.
+  El usuario decidió explícitamente mantener `gpt-4o-mini` (no `gpt-4o`) por
+  costo; si esto vuelve a fallar en pruebas, re-evaluar.
+- **Resuelto (dos veces)**: el error de cálculo en el flujo de curva de
+  talles. Primero se precalculó el consumo ponderado en Python pero se
+  dejaba en el contexto para que el LLM multiplicara — funcionó pero expuso
+  algo peor (ver "Function calling" arriba: el modelo saltaba el gate y
+  reutilizaba totales de turnos anteriores). La solución final saca el
+  cálculo del LLM por completo con function calling.
 - Vercel: confirmar que el deploy productivo funciona de punta a punta con
   el fix de `vercel.json` (se corrigió el error, falta la confirmación en
   producción con `OPENAI_API_KEY` cargada ahí).

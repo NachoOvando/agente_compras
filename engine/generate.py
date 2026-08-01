@@ -1,9 +1,24 @@
 """Fase de generación: rag_answer orquesta retrieve → augment → generate."""
 
+import json
+
 import numpy as np
 
-from engine import config, context, prompts, retrieval
+from engine import config, context, prompts, retrieval, tools
 from engine.indexing import get_embeddings
+
+
+def _tool_call_a_dict(tool_call) -> dict:
+    """Serializa un tool_call de la respuesta del SDK de OpenAI a dict plano,
+    para poder reenviarlo tal cual en el segundo mensaje 'assistant'."""
+    return {
+        "id": tool_call.id,
+        "type": "function",
+        "function": {
+            "name": tool_call.function.name,
+            "arguments": tool_call.function.arguments,
+        },
+    }
 
 
 def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
@@ -32,11 +47,15 @@ def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
     )
 
     # AUGMENT: fichas recuperadas + BOM + stock + políticas + curva de talles
+    # + contexto de negocio
     bom = context.load_bom()
     stock = context.load_stock(stock_overrides)
     politicas = context.load_politicas()
     curva_talles = context.load_curva_talles()
-    full_context = context.build_context(retrieved, bom, stock, politicas, curva_talles)
+    contexto_negocio = context.load_contexto_negocio()
+    full_context = context.build_context(
+        retrieved, bom, stock, politicas, curva_talles, contexto_negocio
+    )
 
     # GENERATE
     messages = [{"role": "system", "content": prompts.SYSTEM_PROMPT}]
@@ -51,9 +70,40 @@ def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
         messages=messages,
         temperature=config.TEMPERATURE,
         max_tokens=config.MAX_TOKENS,
+        tools=tools.TOOLS_SPEC,
     )
+    message = response.choices[0].message
+
+    # Si el modelo pidió calcular, la aritmética la hace engine/tools.py (no
+    # el LLM) y se le devuelve el resultado exacto para que solo lo redacte.
+    # Una sola ronda: no hay loop de tool calls encadenados.
+    tool_calls = getattr(message, "tool_calls", None)
+    if tool_calls:
+        messages.append({
+            "role": "assistant",
+            "content": message.content,
+            "tool_calls": [_tool_call_a_dict(tc) for tc in tool_calls],
+        })
+        for tool_call in tool_calls:
+            argumentos = json.loads(tool_call.function.arguments or "{}")
+            resultado = tools.ejecutar(
+                tool_call.function.name, argumentos, stock_overrides=stock_overrides
+            )
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": json.dumps(resultado, ensure_ascii=False),
+            })
+
+        response = client.chat.completions.create(
+            model=config.CHAT_MODEL,
+            messages=messages,
+            temperature=config.TEMPERATURE,
+            max_tokens=config.MAX_TOKENS,
+        )
+        message = response.choices[0].message
 
     return {
-        "answer": response.choices[0].message.content,
+        "answer": message.content,
         "sources": [{"index": r["index"], "score": r["score"]} for r in retrieved],
     }

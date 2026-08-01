@@ -144,10 +144,11 @@ def format_politicas(politicas: list[dict]) -> str:
 def compute_consumo_ponderado_curva(bom: list[dict], curva_talles: dict) -> list[dict]:
     """Consumo por par ponderado por la curva normal de talles, precalculado
     en Python para cada insumo variable por talle (no depende de la cantidad
-    de pares que pida el usuario — solo de datos ya cargados). Evita que el
-    LLM tenga que repartir y sumar 17 términos: el modelo solo multiplica
-    cantidad_total × este valor. Los % de la curva ya suman 100, así que la
-    suma ponderada es directamente el promedio."""
+    de pares que pida el usuario — solo de datos ya cargados). Usado por
+    engine/tools.py para calcular la necesidad cuando se aplica la curva
+    normal — el LLM nunca ve ni suma estos números directamente (ver nota en
+    tools.py: fue justo lo que causó una confusión con el talle puntual).
+    Los % de la curva ya suman 100, así que la suma ponderada es el promedio."""
     ponderado = []
     for fila in bom:
         consumo_por_talle = fila.get("consumo_por_talle")
@@ -165,30 +166,32 @@ def compute_consumo_ponderado_curva(bom: list[dict], curva_talles: dict) -> list
     return ponderado
 
 
-def format_curva_talles(curva: dict, ponderado: list[dict]) -> str:
+def format_curva_talles(curva: dict) -> str:
     """Distribución de talles como texto plano, con la advertencia de que es
-    un dato de ejemplo hasta que se cargue la curva real de la empresa. Suma
-    el consumo ponderado ya calculado (ver compute_consumo_ponderado_curva)
-    para que el LLM no tenga que repartir/sumar por talle."""
+    un dato de ejemplo hasta que se cargue la curva real de la empresa. Solo
+    informativo — el cálculo de necesidad con curva normal lo hace
+    engine/tools.py, no el LLM a partir de este texto."""
     lineas = [
         "Distribución típica de producción por talle (% de pares por talle, "
         "PLACEHOLDER — dato de ejemplo, todavía no es la curva real):",
         " ".join(f"T{t}={pct}%" for t, pct in curva.items()),
     ]
-    if ponderado:
-        lineas.append("")
-        lineas.append(
-            "CONSUMO PONDERADO SEGÚN LA CURVA NORMAL (ya calculado — para una "
-            "cantidad total de N pares sin desglose de talle, la necesidad de "
-            "estos insumos es N × este valor; no hace falta repartir ni sumar "
-            "por talle):"
-        )
-        for fila in ponderado:
-            lineas.append(
-                f"{fila['codigo']} | {fila['insumo']}: "
-                f"{fila['consumo_ponderado_por_par']} {fila['unidad']}/par"
-            )
     return "\n".join(lineas)
+
+
+@lru_cache(maxsize=1)
+def load_contexto_negocio() -> str:
+    """Contexto operativo del negocio (perfil productivo, metodología de
+    criticidad de insumos, curva de ventas, qué queda fuera de alcance y por
+    qué) — prosa versionada a mano en data/source/, mismo tratamiento que
+    stock.json. Se inyecta tal cual, sin pasar por embeddings: es corto y
+    siempre relevante para cualquier pregunta."""
+    if not config.CONTEXTO_NEGOCIO_PATH.exists():
+        raise FileNotFoundError(
+            "No se encontró data/source/contexto_negocio.md. Creá el archivo "
+            "a mano (ver docs/customization.md)."
+        )
+    return config.CONTEXTO_NEGOCIO_PATH.read_text(encoding="utf-8")
 
 
 def format_stock(stock: dict) -> str:
@@ -215,13 +218,14 @@ def format_stock(stock: dict) -> str:
 
 def build_context(
     retrieved: list[dict], bom: list[dict], stock: dict, politicas: list[dict],
-    curva_talles: dict,
+    curva_talles: dict, contexto_negocio: str,
 ) -> str:
-    """Concatena fichas recuperadas + BOM + stock + políticas + curva de talles
-    en un único contexto."""
+    """Concatena fichas recuperadas + BOM + stock + políticas + curva de
+    talles + contexto de negocio en un único contexto."""
     fichas = "\n\n".join(res["chunk"] for res in retrieved)
-    ponderado = compute_consumo_ponderado_curva(bom, curva_talles)
     return (
+        "=== CONTEXTO DEL NEGOCIO ===\n"
+        f"{contexto_negocio}\n\n"
         "=== FICHAS DE PROVEEDORES (fragmentos recuperados) ===\n"
         f"{fichas}\n\n"
         "=== BOM DEL PRODUCTO ===\n"
@@ -231,5 +235,5 @@ def build_context(
         "=== POLÍTICAS DE INVENTARIO ===\n"
         f"{format_politicas(politicas)}\n\n"
         "=== CURVA NORMAL DE TALLES ===\n"
-        f"{format_curva_talles(curva_talles, ponderado)}"
+        f"{format_curva_talles(curva_talles)}"
     )
