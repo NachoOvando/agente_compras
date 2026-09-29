@@ -1,5 +1,5 @@
 {
-  "_nota": "Distribución normal de talles (media 42, desvío 2,5, truncada entre los talles 34 y 50), entregada por [FUENTE] en [FECHA].",
+  "_nota": "Dato de entrada suministrado por Maincal S.A. (fuente y fecha: a confirmar por la empresa). Curva Normal(media=42, desvío=2,5), truncada entre los talles 34 y 50 y normalizada a suma 100.",
   "talles": {
     "34": 0.0954,
     "35": 0.3168,

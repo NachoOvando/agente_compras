@@ -43,3 +43,6 @@ Los datos son **reales de la empresa**: fichas de proveedores (PDF), BOM
 (export de SAP) y políticas de inventario. `stock_actual` en `stock.json` es
 el input manual/diario. Ver [docs/customization.md](docs/customization.md)
 para el flujo de actualización.
+
+TODO: confirmar con Maincal la fuente y la fecha de `data/source/curva_talles.json`
+(Normal, media 42, desvío 2,5, talles 34–50); hoy figuran como "a confirmar por la empresa".

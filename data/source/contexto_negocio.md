@@ -24,10 +24,26 @@ entre talles.
 
 Los insumos del producto (decenas de SKUs, diferenciados por talle) se
 consolidan en familias de compra (mismo insumo, distintos talles = una sola
-decisión de compra). Sobre esas familias se aplicó un modelo de clustering
-(K-Means, K=3) con dos variables: volumen relativo normalizado dentro de su
-unidad de medida, y alcance productivo (% de artículos que usan ese insumo).
-Los clusters resultantes son: CRÍTICO / IMPORTANTE / SECUNDARIO.
+decisión de compra). Sobre 24 familias (17 de compra externa y 7 de
+producción interna, que se incluyen para no alterar la normalización) se
+aplicó un modelo de clustering (K-Means, K=3) con TRES variables
+estandarizadas a [0, 1], de modo que las tres pesan igual en la distancia:
+
+1. **Volumen relativo**: consumo de la familia normalizado dentro de su
+   unidad de medida (gramos, pares y unidades no son comparables entre sí).
+2. **Alcance productivo**: % de artículos que usan ese insumo.
+3. **Lead time**: riesgo de abastecimiento, escalado entre el mínimo y el
+   máximo de las familias.
+
+Los pesos AHP (Alcance 0,604; Lead Time 0,312; Volumen 0,084) NO entran al
+K-Means. Se usan solo después, para calcular el Score AHP de los tres
+centroides y así ordenar y etiquetar los clusters: CRÍTICO (mayor score) /
+IMPORTANTE / SECUNDARIO.
+
+Regla final de insumo crítico: pertenecer al cluster CRÍTICO, ser de compra
+externa y tener un lead time (`Lead_Time_dias`) mayor a la mediana de las 24
+familias. Un insumo que se repone más rápido que la familia típica no
+necesita stock de seguridad dedicado, aunque tenga mucho volumen y alcance.
 
 De las familias más críticas, se seleccionaron 3 para gestión de inventario
 activa (las que hoy tiene este asistente) por combinar alta criticidad con

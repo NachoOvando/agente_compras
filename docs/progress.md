@@ -102,8 +102,9 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
   traen lead time/precio/MOQ (el prompt se lo prometía al modelo — corregido).
 - **Contexto de negocio** (`data/source/contexto_negocio.md`, prosa libre sin
   nombre de la empresa): metodología de criticidad de insumos (K-Means K=3
-  sobre volumen relativo + alcance productivo → CRÍTICO/IMPORTANTE/
-  SECUNDARIO), curva de ventas por talle (forecast Prophet desagregado con
+  sobre volumen relativo + alcance productivo + lead time, 24 familias →
+  CRÍTICO/IMPORTANTE/SECUNDARIO; pesos AHP solo para etiquetar; regla final
+  con mediana de lead time), curva de ventas por talle (forecast Prophet desagregado con
   distribución normal, moda 42, consumo no lineal con el volumen), y qué
   insumos quedan fuera de este sistema y por qué (semielaborados internos;
   cordones/ojalillos → gestión reactiva, lead time corto, no seguimiento
@@ -138,8 +139,8 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
 - `stock_actual` en `stock.json` sigue siendo un valor de ejemplo — falta
   reemplazarlo por una fuente real (manual o integración con ERP/logística),
   tal como está planteado desde la spec original.
-- `curva_talles.json`: la `_nota` todavía tiene `[FUENTE]` y `[FECHA]` sin
-  completar (quién entregó la curva y cuándo).
+- `curva_talles.json`: falta confirmar con Maincal la fuente y la fecha de
+  la curva (la `_nota` lo indica como "a confirmar por la empresa").
 - **Limitación conocida de `gpt-4o-mini`** (no es un bug de código): en
   preguntas de suficiencia que deberían evaluar los 3 insumos críticos a la
   vez, el modelo podía enumerar solo 1 o 2 en vez de los 3 (verificado antes

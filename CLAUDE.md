@@ -84,7 +84,7 @@ En particular `SPEC_asistente_compras.md` (brief completo) y
   por los reales; el flujo de datos de ejemplo ya no existe).
 - `data/source/curva_talles.json` (distribución de producción por talle) es
   la normal (media 42, desvío 2,5) del repo de planificación. Pendiente:
-  completar `[FUENTE]` y `[FECHA]` en su `_nota`.
+  confirmar con Maincal la fuente y la fecha de la curva (ver TODO en README).
   Cuando el usuario pide una cantidad de pares sin desglose por talle, el
   asistente pregunta si aplicar la curva normal o un talle puntual (regla 6
   de `engine/prompts.py`) antes de calcular, en vez de promediar.
@@ -97,6 +97,6 @@ En particular `SPEC_asistente_compras.md` (brief completo) y
   (1000 pares → total → "× 1000" otra vez).
 - **Contexto de negocio** (`data/source/contexto_negocio.md`, sin nombre de la
   empresa): metodología de criticidad de insumos (K-Means sobre volumen
-  relativo + alcance productivo), curva de ventas por talle, y qué insumos
+  relativo + alcance productivo + lead time), curva de ventas por talle, y qué insumos
   quedan fuera de este sistema y por qué (ej. cordones/ojalillos → gestión
   reactiva, no predictiva) — se inyecta siempre en el contexto.
