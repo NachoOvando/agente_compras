@@ -24,7 +24,9 @@ TOOLS_SPEC = [
                 "de N pares del producto y la compara contra el stock actual. Usala "
                 "SIEMPRE que la pregunta (o el historial de la conversación) "
                 "mencione una cantidad de pares a producir: nunca hagas vos mismo "
-                "la multiplicación ni reutilices un total de un turno anterior."
+                "la multiplicación ni reutilices un total de un turno anterior. Los "
+                "campos terminados en _txt ya vienen formateados (separador de miles, "
+                "coma decimal, unidad): copialos tal cual, sin reformatear."
             ),
             "parameters": {
                 "type": "object",
@@ -58,6 +60,19 @@ TOOLS_SPEC = [
         },
     }
 ]
+
+
+def _fmt(valor, unidad: str = "") -> str:
+    """Formato es-AR (1.234,5) con hasta 2 decimales y la unidad al lado. El
+    modelo copia este texto tal cual en vez de reformatear el número crudo."""
+    texto = f"{valor:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+    if "," in texto:
+        texto = texto.rstrip("0").rstrip(",")
+    return f"{texto} {unidad}".strip()
+
+
+def _unidad_por_par(fila: dict) -> str:
+    return f"{fila['unidad']}/par"
 
 
 def _normalizar_talle(talle) -> str:
@@ -142,6 +157,8 @@ def calcular_necesidad_insumos(
             "consumo_por_par": consumo,
             "base_del_consumo": base,
             "necesidad": necesidad,
+            "consumo_por_par_txt": _fmt(consumo, _unidad_por_par(fila)),
+            "necesidad_txt": _fmt(necesidad, fila["unidad"]),
         }
 
         item = stock_por_codigo.get(fila["codigo"])
@@ -155,6 +172,9 @@ def calcular_necesidad_insumos(
             detalle["stock_actual"] = actual
             detalle["alcanza"] = alcanza
             detalle["faltante"] = 0 if alcanza else round(necesidad - actual, 2)
+            detalle["stock_actual_txt"] = _fmt(actual, fila["unidad"])
+            detalle["alcanza_txt"] = "Sí" if alcanza else "No"
+            detalle["faltante_txt"] = _fmt(detalle["faltante"], fila["unidad"])
         insumos.append(detalle)
 
     if talle is not None:

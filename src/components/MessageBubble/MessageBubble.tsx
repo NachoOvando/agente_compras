@@ -1,11 +1,26 @@
 import { WarningCircle } from '@phosphor-icons/react/dist/ssr';
-import type { ReactNode } from 'react';
+import { isValidElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ChatMessage } from '@/lib/types';
 
 interface MessageBubbleProps {
   message: ChatMessage;
+}
+
+function nodeToText(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(nodeToText).join('');
+  if (isValidElement(node)) return nodeToText((node.props as { children?: ReactNode }).children);
+  return '';
+}
+
+// Celdas de veredicto ("Sí", "No", "Alcanza", "Falta") → badge de color.
+function estadoDeCelda(texto: string): 'ok' | 'mal' | null {
+  const t = texto.toLowerCase().replace(/[*_.]/g, '');
+  if (/^(sí|si|alcanza|suficiente|ok)$/.test(t)) return 'ok';
+  if (/^(no|no alcanza|falta|insuficiente)$/.test(t)) return 'mal';
+  return null;
 }
 
 // Mapeo de elementos markdown a los tokens de color/espaciado del proyecto,
@@ -23,19 +38,63 @@ const markdownComponents = {
   strong: ({ children }: { children?: ReactNode }) => (
     <strong className="font-semibold">{children}</strong>
   ),
+  h1: ({ children }: { children?: ReactNode }) => (
+    <h3 className="mb-2 text-base font-semibold">{children}</h3>
+  ),
+  h2: ({ children }: { children?: ReactNode }) => (
+    <h3 className="mb-2 text-base font-semibold">{children}</h3>
+  ),
+  h3: ({ children }: { children?: ReactNode }) => (
+    <h4 className="mb-1.5 text-sm font-semibold">{children}</h4>
+  ),
+  hr: () => <hr className="my-3 border-border" />,
+  blockquote: ({ children }: { children?: ReactNode }) => (
+    <blockquote className="mb-2 border-l-2 border-accent pl-3 text-muted-foreground last:mb-0">
+      {children}
+    </blockquote>
+  ),
+  code: ({ children }: { children?: ReactNode }) => (
+    <code className="rounded bg-border/60 px-1 py-0.5 font-mono text-[0.85em]">{children}</code>
+  ),
   table: ({ children }: { children?: ReactNode }) => (
-    <div className="mb-2 overflow-x-auto last:mb-0">
-      <table className="border-collapse text-xs">{children}</table>
+    <div className="mb-2 overflow-x-auto rounded-lg border border-border bg-card last:mb-0">
+      <table className="w-full min-w-max border-collapse text-sm">{children}</table>
     </div>
   ),
-  th: ({ children }: { children?: ReactNode }) => (
-    <th className="border border-border bg-border/30 px-2 py-1 text-left font-semibold">
+  thead: ({ children }: { children?: ReactNode }) => (
+    <thead className="bg-border/40 text-xs uppercase tracking-wide text-muted-foreground">
       {children}
-    </th>
+    </thead>
   ),
-  td: ({ children }: { children?: ReactNode }) => (
-    <td className="border border-border px-2 py-1">{children}</td>
+  tr: ({ children }: { children?: ReactNode }) => (
+    <tr className="border-t border-border first:border-t-0 even:bg-muted/40">{children}</tr>
   ),
+  th: ({ children }: { children?: ReactNode }) => (
+    <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">{children}</th>
+  ),
+  td: ({ children }: { children?: ReactNode }) => {
+    const texto = nodeToText(children).trim();
+    const estado = estadoDeCelda(texto);
+    if (estado) {
+      const clases =
+        estado === 'ok'
+          ? 'bg-success/15 text-success'
+          : 'bg-destructive/15 text-destructive';
+      return (
+        <td className="px-3 py-2">
+          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${clases}`}>
+            {texto}
+          </span>
+        </td>
+      );
+    }
+    const esNumero = /^[\d.,]+(\s\S+)?$/.test(texto);
+    return (
+      <td className={`px-3 py-2 ${esNumero ? 'whitespace-nowrap text-right tabular-nums' : ''}`}>
+        {children}
+      </td>
+    );
+  },
 };
 
 export default function MessageBubble({ message }: MessageBubbleProps) {

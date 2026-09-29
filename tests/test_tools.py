@@ -139,3 +139,17 @@ def test_ejecutar_despacha_por_nombre():
 def test_ejecutar_herramienta_desconocida_devuelve_error_sin_lanzar():
     resultado = tools.ejecutar("otra_cosa", {})
     assert "error" in resultado
+
+
+def test_fmt_formato_es_ar():
+    assert tools._fmt(1234567.5, "g") == "1.234.567,5 g"
+    assert tools._fmt(200.0, "pares") == "200 pares"
+
+
+def test_resultado_incluye_textos_formateados_para_copiar():
+    resultado = tools.calcular_necesidad_insumos(cantidad_pares=200, talle="40")
+    puntera = next(i for i in resultado["insumos"] if i["insumo"] == "Puntera de acero")
+    assert puntera["alcanza_txt"] == "No"
+    assert puntera["necesidad_txt"].startswith("200 ")
+    assert puntera["faltante_txt"].startswith("100 ")
+    assert puntera["consumo_por_par_txt"].endswith("/par")
