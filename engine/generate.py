@@ -71,6 +71,9 @@ def rag_answer(question: str, stock_overrides: dict[str, float] | None = None,
         temperature=config.TEMPERATURE,
         max_tokens=config.MAX_TOKENS,
         tools=tools.TOOLS_SPEC,
+        # Una orden = un cálculo. Sin esto el modelo puede pedir varios talles
+        # en paralelo (ej. "43" → 42, 43 y 44) y la respuesta sale con N tablas.
+        parallel_tool_calls=False,
     )
     message = response.choices[0].message
 

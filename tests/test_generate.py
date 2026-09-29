@@ -307,3 +307,11 @@ def test_rag_answer_pasa_stock_overrides_a_la_tool():
     resultado_tool = json.loads(mensaje_tool["content"])
     puntera = next(i for i in resultado_tool["insumos"] if i["insumo"] == "Puntera de acero")
     assert puntera["stock_actual"] == 999
+
+
+def test_rag_answer_pide_una_sola_tool_call_por_turno():
+    """Bug real: con "43" el modelo pidió los talles 42, 43 y 44 en paralelo y
+    la respuesta salió con tres tablas."""
+    client = FakeClient()
+    generate.rag_answer("43", client=client)
+    assert client.chat_calls[0]["parallel_tool_calls"] is False
