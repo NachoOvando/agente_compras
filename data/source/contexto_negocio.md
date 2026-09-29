@@ -36,9 +36,8 @@ estandarizadas a [0, 1], de modo que las tres pesan igual en la distancia:
    máximo de las familias.
 
 Los pesos AHP (Alcance 0,604; Lead Time 0,312; Volumen 0,084) NO entran al
-K-Means. Se usan solo después, para calcular el Score AHP de los tres
-centroides y así ordenar y etiquetar los clusters: CRÍTICO (mayor score) /
-IMPORTANTE / SECUNDARIO.
+K-Means; solo se usan para calcular el Score AHP de los centroides y así
+ordenar y etiquetar los clusters (CRÍTICO / IMPORTANTE / SECUNDARIO).
 
 Regla final de insumo crítico: pertenecer al cluster CRÍTICO, ser de compra
 externa y tener un lead time (`Lead_Time_dias`) mayor a la mediana de las 24
