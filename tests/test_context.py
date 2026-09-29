@@ -119,9 +119,9 @@ def test_curva_talles_faltante_da_error_claro(monkeypatch, tmp_path):
         context.load_curva_talles()
 
 
-def test_format_curva_talles_marca_que_es_placeholder():
+def test_format_curva_talles_lista_los_talles():
     out = context.format_curva_talles({"34": 10.0, "40": 50.0})
-    assert "PLACEHOLDER" in out
+    assert "distribución normal" in out
     assert "T34=10.0%" in out
     assert "T40=50.0%" in out
 

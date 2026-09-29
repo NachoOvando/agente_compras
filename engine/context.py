@@ -167,13 +167,12 @@ def compute_consumo_ponderado_curva(bom: list[dict], curva_talles: dict) -> list
 
 
 def format_curva_talles(curva: dict) -> str:
-    """Distribución de talles como texto plano, con la advertencia de que es
-    un dato de ejemplo hasta que se cargue la curva real de la empresa. Solo
+    """Distribución de talles como texto plano. Solo
     informativo — el cálculo de necesidad con curva normal lo hace
     engine/tools.py, no el LLM a partir de este texto."""
     lineas = [
         "Distribución típica de producción por talle (% de pares por talle, "
-        "PLACEHOLDER — dato de ejemplo, todavía no es la curva real):",
+        "distribución normal, media 42 y desvío 2,5):",
         " ".join(f"T{t}={pct}%" for t, pct in curva.items()),
     ]
     return "\n".join(lineas)

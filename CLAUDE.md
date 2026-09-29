@@ -26,7 +26,7 @@ engine/          motor RAG (lógica de negocio, testeable sin servidor)
 api/index.py     FastAPI — solo routing, delega a engine/
 shared/          app-config.json: producto y preguntas demo (fuente única Python+TS)
 scripts/         build_index.py — único script: indexa fichas, BOM (export SAP) y políticas
-data/source/     cerco de información: Cerco_informacion.pdf, BOM _ CRONOS-N04.xlsx (SAP), stock.json, politicas_inventario.xlsx, contexto_negocio.md (reales) + curva_talles.json (PLACEHOLDER)
+data/source/     cerco de información: Cerco_informacion.pdf, BOM _ CRONOS-N04.xlsx (SAP), stock.json, politicas_inventario.xlsx, contexto_negocio.md (reales) + curva_talles.json (normal, media 42 / desvío 2,5, del repo de planificación)
 data/index/      índice generado (chunks/embeddings/bom.json/politicas.json) — no editar a mano
 src/             frontend Next.js: src/app/, src/components/, src/lib/
 tests/           pytest del motor
@@ -82,8 +82,9 @@ En particular `SPEC_asistente_compras.md` (brief completo) y
   archivo — el resto de `stock.json` sí es real).
 - `scripts/seed_example_data.py` se eliminó (datos ficticios ya superados
   por los reales; el flujo de datos de ejemplo ya no existe).
-- **Pendiente**: `data/source/curva_talles.json` (distribución de producción
-  por talle) es un placeholder de ejemplo — falta la curva real de la empresa.
+- `data/source/curva_talles.json` (distribución de producción por talle) es
+  la normal (media 42, desvío 2,5) del repo de planificación. Pendiente:
+  completar `[FUENTE]` y `[FECHA]` en su `_nota`.
   Cuando el usuario pide una cantidad de pares sin desglose por talle, el
   asistente pregunta si aplicar la curva normal o un talle puntual (regla 6
   de `engine/prompts.py`) antes de calcular, en vez de promediar.

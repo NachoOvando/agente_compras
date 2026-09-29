@@ -19,7 +19,7 @@ Vercel.
 
 ## Estado actual: funcional con datos 100% reales
 
-Las fuentes del cerco de información, salvo la curva de talles, son reales:
+Las fuentes del cerco de información son reales; la curva de talles es la distribución normal del repo de planificación:
 
 | Fuente | Archivo | Contenido |
 |---|---|---|
@@ -27,7 +27,7 @@ Las fuentes del cerco de información, salvo la curva de talles, son reales:
 | BOM del producto | `data/source/BOM _ CRONOS-N04.xlsx` | Export crudo de SAP (220 filas, 17 talles, columna `Tipo` Critico/No Critico) |
 | Políticas de inventario | `data/source/politicas_inventario.xlsx` | Lead time, demanda, stock de seguridad, ROP reales (análisis de la tesis) |
 | Stock actual | `data/source/stock.json` | `stock_minimo` = ROP real; `stock_actual` es el único dato todavía placeholder (es el input manual/diario por diseño) |
-| Curva normal de talles | `data/source/curva_talles.json` | **PLACEHOLDER** — campana de ejemplo centrada en T42 (talle medio real del negocio), no la distribución real de ventas |
+| Curva normal de talles | `data/source/curva_talles.json` | Distribución normal (media 42, desvío 2,5) evaluada en los talles 34–50 y normalizada a suma 100%, la misma que usa el repo de planificación |
 | Contexto de negocio | `data/source/contexto_negocio.md` | Real (sin nombre de la empresa): metodología de criticidad, curva de ventas por talle, insumos fuera de alcance y por qué |
 
 **Insumos críticos reales**: Conjunto Sistema PU (variable por talle),
@@ -68,8 +68,8 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
   sin desglose por talle (ej. "¿alcanza el stock para 5000 pares?"), el
   asistente **pregunta primero** si aplica la curva normal de talles o si el
   usuario prefiere un talle puntual — nunca promedia ni asume. `data/source/
-  curva_talles.json` es **placeholder** (campana centrada en T42, el talle
-  medio real del negocio), falta la curva real de ventas.
+  curva_talles.json` es la distribución normal del repo de planificación
+  (media 42, desvío 2,5, talles 34–50).
 - **Markdown en el chat**: `MessageBubble.tsx` renderiza la respuesta con
   `react-markdown` + `remark-gfm` — antes el `**negrita**` que el modelo ya
   emitía se veía como texto crudo con asteriscos.
@@ -138,8 +138,8 @@ tests, lint y typecheck en verde, deploy a Vercel sin errores.
 - `stock_actual` en `stock.json` sigue siendo un valor de ejemplo — falta
   reemplazarlo por una fuente real (manual o integración con ERP/logística),
   tal como está planteado desde la spec original.
-- `curva_talles.json` es de ejemplo — falta la distribución real de
-  producción/ventas por talle de la empresa.
+- `curva_talles.json`: la `_nota` todavía tiene `[FUENTE]` y `[FECHA]` sin
+  completar (quién entregó la curva y cuándo).
 - **Limitación conocida de `gpt-4o-mini`** (no es un bug de código): en
   preguntas de suficiencia que deberían evaluar los 3 insumos críticos a la
   vez, el modelo podía enumerar solo 1 o 2 en vez de los 3 (verificado antes
