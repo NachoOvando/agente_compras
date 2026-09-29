@@ -1,0 +1,35 @@
+[
+  {
+    "insumo": "Conjunto Sistema PU",
+    "politica": "Revisión continua (s,Q)",
+    "lead_time_dias": 45.0,
+    "demanda_media_mensual": 8405980.2,
+    "desvio_mensual": 328335.1,
+    "stock_seguridad": 824359.7,
+    "rop": 13433330.0,
+    "stock_maximo": 21839310.2,
+    "cobertura_ss_dias": 2.9
+  },
+  {
+    "insumo": "Puntera de acero",
+    "politica": "Revisión periódica (R,S)",
+    "lead_time_dias": 40.0,
+    "demanda_media_mensual": 13779.2,
+    "desvio_mensual": 470.5,
+    "stock_seguridad": 1473.2,
+    "rop": 33624.8,
+    "stock_maximo": 47404.0,
+    "cobertura_ss_dias": 3.2
+  },
+  {
+    "insumo": "Caja de empaque",
+    "politica": "Revisión periódica (R,S)",
+    "lead_time_dias": 30.0,
+    "demanda_media_mensual": 13779.2,
+    "desvio_mensual": 470.5,
+    "stock_seguridad": 1363.9,
+    "rop": 28922.4,
+    "stock_maximo": 42701.6,
+    "cobertura_ss_dias": 3.0
+  }
+]

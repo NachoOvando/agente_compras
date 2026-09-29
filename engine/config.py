@@ -17,15 +17,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_SOURCE_DIR = BASE_DIR / "data" / "source"
 DATA_INDEX_DIR = BASE_DIR / "data" / "index"
 
-PDF_FICHAS_PATH = DATA_SOURCE_DIR / "datos_maincal_EJEMPLO.pdf"
-BOM_XLSX_PATH = DATA_SOURCE_DIR / "bom_cronos_n04.xlsx"
+PDF_FICHAS_PATH = DATA_SOURCE_DIR / "Cerco_informacion.pdf"
+BOM_XLSX_PATH = DATA_SOURCE_DIR / "BOM _ CRONOS-N04.xlsx"
 STOCK_JSON_PATH = DATA_SOURCE_DIR / "stock.json"
+CURVA_TALLES_JSON_PATH = DATA_SOURCE_DIR / "curva_talles.json"
+POLITICAS_XLSX_PATH = DATA_SOURCE_DIR / "politicas_inventario.xlsx"
+CONTEXTO_NEGOCIO_PATH = DATA_SOURCE_DIR / "contexto_negocio.md"
 
 CHUNKS_JSON_PATH = DATA_INDEX_DIR / "chunks.json"
 EMBEDDINGS_NPY_PATH = DATA_INDEX_DIR / "embeddings.npy"
 BOM_JSON_PATH = DATA_INDEX_DIR / "bom.json"
+POLITICAS_JSON_PATH = DATA_INDEX_DIR / "politicas.json"
 
 SHARED_CONFIG_PATH = BASE_DIR / "shared" / "app-config.json"
+
+# Talles de calzado soportados (algunos insumos consumen distinto según el
+# talle, ej. el conjunto sistema PU). Rango único: build_index.py y
+# context.py lo referencian, nunca hardcodean 34/50 por separado.
+TALLES: list[str] = [str(t) for t in range(34, 51)]
 
 # --- Modelos OpenAI ---
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -37,9 +46,13 @@ CHUNK_OVERLAP = 300
 EMBEDDING_BATCH_SIZE = 100
 TOP_K = 3
 
+# Memoria de conversación: cuántos turnos (pregunta+respuesta) previos se
+# reenvían al LLM como historial. Cada turno = 2 mensajes (user+assistant).
+MAX_HISTORY_TURNS = 10
+
 # --- Parámetros de generación ---
 TEMPERATURE = 0.1  # baja: respuestas fieles al dato, sin creatividad
-MAX_TOKENS = 800
+MAX_TOKENS = 1500  # una respuesta con curva de talles (17 filas x 2 tablas) puede acercarse a 800
 
 # Contenido compartido con el frontend (fuente única: shared/app-config.json,
 # que src/lib/app-config.ts importa del lado TypeScript).

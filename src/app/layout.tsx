@@ -10,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Asistente de Compras — Maincal S.A.',
+  title: 'Asistente de Compras',
   description:
     'Asistente conversacional (LLM + RAG) para prioridades de compra de insumos críticos.',
 };

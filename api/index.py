@@ -10,6 +10,7 @@ con: python -m uvicorn api.index:app --reload --port 8000
 import logging
 import sys
 from pathlib import Path
+from typing import Literal
 
 # La raíz del proyecto tiene que estar en el path para importar engine/
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -21,19 +22,28 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from engine import config as engine_config
 from engine import context as engine_context
 from engine.generate import rag_answer
 
 app = FastAPI(
-    title="Asistente de Compras Maincal",
+    title="Asistente de Compras",
     docs_url="/api/py/docs",
     openapi_url="/api/py/openapi.json",
 )
 
 
+class HistoryTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=2000)
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     stockOverrides: dict[str, float] | None = None
+    history: list[HistoryTurn] | None = Field(
+        default=None, max_length=engine_config.MAX_HISTORY_TURNS * 2
+    )
 
 
 def _error(status: int, code: str, message: str) -> JSONResponse:
@@ -58,7 +68,13 @@ def get_stock():
 @app.post("/api/py/ask")
 def ask(body: AskRequest):
     try:
-        result = rag_answer(body.question, stock_overrides=body.stockOverrides)
+        history = (
+            [{"role": h.role, "content": h.content} for h in body.history]
+            if body.history else None
+        )
+        result = rag_answer(
+            body.question, stock_overrides=body.stockOverrides, history=history
+        )
     except FileNotFoundError as exc:
         # Índice o datos del cerco no generados todavía
         logger.warning("Índice/datos no encontrados: %s", exc)

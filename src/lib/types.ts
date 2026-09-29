@@ -22,4 +22,9 @@ export interface ChatMessage {
   isError?: boolean;
 }
 
+export interface HistoryTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export type ApiResponse<T> = { data: T } | { error: string; code: string };

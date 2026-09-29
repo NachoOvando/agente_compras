@@ -3,24 +3,24 @@
   "items": [
     {
       "codigo": "INS-001",
-      "insumo": "Cuero vacuno",
-      "unidad": "m2",
-      "stock_actual": 150,
-      "stock_minimo": 400
+      "insumo": "Conjunto Sistema PU",
+      "unidad": "g",
+      "stock_actual": 9800000,
+      "stock_minimo": 13433330.0
     },
     {
       "codigo": "INS-002",
-      "insumo": "Suela de poliuretano (PU)",
+      "insumo": "Puntera de acero",
       "unidad": "par",
-      "stock_actual": 3200,
-      "stock_minimo": 1500
+      "stock_actual": 42000,
+      "stock_minimo": 33624.8
     },
     {
       "codigo": "INS-003",
-      "insumo": "Puntera de acero",
-      "unidad": "par",
-      "stock_actual": 6000,
-      "stock_minimo": 4000
+      "insumo": "Caja de empaque",
+      "unidad": "unidad",
+      "stock_actual": 15000,
+      "stock_minimo": 28922.4
     }
   ]
 }

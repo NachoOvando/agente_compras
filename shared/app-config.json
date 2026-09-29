@@ -1,10 +1,10 @@
 {
   "producto": "Cronos-N04",
   "preguntasDemo": [
-    "¿Qué insumos críticos tengo que comprar primero y por qué?",
-    "¿Cuál es el lead time y el proveedor del cuero vacuno?",
-    "¿Alcanza el stock actual para fabricar 500 pares del Cronos-N04?",
-    "¿Cuánto hilo de coser se consume por par según la BOM?",
+    "¿Qué insumo debería priorizar esta semana?",
+    "Con una orden de 1000 pares del Cronos-N04, ¿tenemos stock suficiente?",
+    "¿Cuál es el lead time y el proveedor del Conjunto Sistema PU?",
+    "¿Cuánto sistema PU se necesita para 200 pares talle 40?",
     "¿Quién ganó el Mundial 2026?"
   ]
 }

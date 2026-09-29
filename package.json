@@ -1,5 +1,5 @@
 {
-  "name": "asistente-compras-maincal",
+  "name": "asistente-compras",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,7 +15,9 @@
     "@phosphor-icons/react": "^2.1.10",
     "next": "^15.5.16",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",

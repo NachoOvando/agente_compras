@@ -1,0 +1,22 @@
+{
+  "_nota": "Dato de entrada suministrado por Maincal S.A. (fuente y fecha: a confirmar por la empresa). Curva Normal(media=42, desvío=2,5), truncada entre los talles 34 y 50 y normalizada a suma 100.",
+  "talles": {
+    "34": 0.0954,
+    "35": 0.3168,
+    "36": 0.8963,
+    "37": 2.161,
+    "38": 4.4396,
+    "39": 7.7723,
+    "40": 11.5949,
+    "41": 14.7399,
+    "42": 15.9676,
+    "43": 14.7399,
+    "44": 11.5949,
+    "45": 7.7723,
+    "46": 4.4396,
+    "47": 2.161,
+    "48": 0.8963,
+    "49": 0.3168,
+    "50": 0.0954
+  }
+}

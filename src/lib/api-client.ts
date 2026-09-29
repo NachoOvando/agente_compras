@@ -1,4 +1,4 @@
-import type { ApiResponse, AskResult, Stock } from './types';
+import type { ApiResponse, AskResult, HistoryTurn, Stock } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
@@ -24,10 +24,11 @@ export function fetchStock(): Promise<Stock> {
 export function askQuestion(
   question: string,
   stockOverrides?: Record<string, number>,
+  history?: HistoryTurn[],
 ): Promise<AskResult> {
   return request<AskResult>('/api/py/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, stockOverrides }),
+    body: JSON.stringify({ question, stockOverrides, history }),
   });
 }
